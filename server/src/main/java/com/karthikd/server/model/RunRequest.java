@@ -8,8 +8,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class RunRequest {
-    private String language;
+    private String language;     // "cpp", "java", "python"
     private String code;
     private String input;
-    private String expectedOutput;
 }

@@ -16,42 +16,16 @@ You can return the answer in any order.
 Input: nums = [2,7,11,15], target = 9  
 Output: [0,1]
     `,
-    starterCode: `function twoSum(nums, target) {\n  // Your code here\n}`,
+    starterCode: {
+      cpp: `vector<int> twoSum(vector<int>& nums, int target) {\n            // Your code here\n}`,
+      java: `public int[] twoSum(int[] nums, int target) {\n            // Your code here\n}`,
+      python: `def twoSum(nums, target):\n            # Your code here\n            pass`,
+    },
     testCases: [
-      {
-        input: "nums = [2,7,11,15], target = 9",
-        expectedOutput: "[0,1]"
-      },
-      {
-        input: "nums = [3,2,4], target = 6",
-        expectedOutput: "[1,2]"
-      }
-    ]
-  },
   {
-    id: 2,
-    title: "Reverse Linked List",
-    slug: "reverse-linked-list",
-    difficulty: "Medium",
-    submitted: false,
-    description: `
-Given the head of a singly linked list, reverse the list, and return the head of the reversed list.
-
-**Example:**
-
-Input: head = [1,2,3,4,5]  
-Output: [5,4,3,2,1]
-    `,
-    starterCode: `function reverseList(head) {\n  // Your code here\n}`,
-    testCases: [
-      {
-        input: "head = [1,2,3,4,5]",
-        expectedOutput: "[5,4,3,2,1]"
-      },
-      {
-        input: "head = [1,2]",
-        expectedOutput: "[2,1]"
-      }
-    ]
+    input: '{"nums": [2,7,11,15], "target": 9}',
+    expectedOutput: "[0,1]"
+  }
+  ]
   }
 ];
