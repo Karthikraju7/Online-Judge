@@ -2,6 +2,12 @@
 
 @import "tailwindcss";
 
+@layer utilities {
+  .animate-nudge {
+    transform: translateY(-20px);
+  }
+}
+
 *{
    font-family: "Outfit", sans-serif;
 }

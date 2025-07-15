@@ -9,31 +9,9 @@ import java.util.stream.Collectors;
 public class PythonWrapper {
 
     public static String wrapPythonCode(String userCode, String slug) {
-        // Normalize tabs to spaces
-        String normalizedUserCode = userCode.replace("\t", "   "); // NO strip()
-
-        boolean hasDef = normalizedUserCode.stripLeading().startsWith("def");
-
-        String functionLine;
-        String bodyIndented;
-
-        if (hasDef) {
-            String[] lines = normalizedUserCode.split("\n");
-            functionLine = lines[0].strip();
-            bodyIndented = Arrays.stream(Arrays.copyOfRange(lines, 1, lines.length))
-                    .collect(Collectors.joining("\n"));  // No indentation added
-        } else {
-            functionLine = "def twoSum(nums, target):";
-            bodyIndented = Arrays.stream(normalizedUserCode.split("\n"))
-                    .map(line -> "    " + line)  // Add indent only if it's a raw body
-                    .collect(Collectors.joining("\n"));
-        }
-
-
         return switch (slug) {
             case "two-sum" -> String.join("\n",
-                    functionLine,
-                    bodyIndented,
+                    userCode,
                     "",
                     "if __name__ == \"__main__\":",
                     "    import json",
@@ -54,8 +32,6 @@ public class PythonWrapper {
             default -> userCode;
         };
     }
-
-
 
     public static String wrapPythonCodeInput(String input, String expected) {
         try {

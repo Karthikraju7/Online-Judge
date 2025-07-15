@@ -12,6 +12,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static com.karthikd.server.util.CppWrapper.wrapCppCode;
+import static com.karthikd.server.util.CppWrapper.wrapCppCodeInput;
+import static com.karthikd.server.util.JavaWrapper.wrapJavaCode;
+import static com.karthikd.server.util.JavaWrapper.wrapJavaCodeInput;
 import static com.karthikd.server.util.PythonWrapper.wrapPythonCode;
 import static com.karthikd.server.util.PythonWrapper.wrapPythonCodeInput;
 
@@ -34,7 +38,14 @@ public class CodeExecutionController {
             String language = request.get("language");
             String slug = request.get("slug");
 
-            String finalCode = language.equals("python") ? wrapPythonCode(rawCode, slug) : rawCode;
+            String finalCode = switch (language) {
+                case "python" -> wrapPythonCode(rawCode, slug);
+                case "cpp" -> wrapCppCode(rawCode, slug);
+                case "java" -> wrapJavaCode(rawCode, slug); // ✅ add this
+                default -> rawCode;
+            };
+
+
 
             System.out.println("🛠️ Run Request Received:");
             System.out.println("Language: " + language);
@@ -64,15 +75,25 @@ public class CodeExecutionController {
         int total = problem.getHiddenTestCases().size();
 
         // Wrap code once for Python
-        String finalCode = language.equals("python") ? wrapPythonCode(code, slug) : code;
+        String finalCode = switch (language) {
+            case "python" -> wrapPythonCode(code, slug);
+            case "cpp" -> wrapCppCode(code, slug);
+            case "java" -> wrapJavaCode(code, slug);
+            default -> code;
+        };
+
 
         // ✅ Collect test inputs for debugging
         List<String> wrappedInputs = new ArrayList<>();
 
         for (TestCase test : problem.getHiddenTestCases()) {
-            String input = language.equals("python")
-                    ? wrapPythonCodeInput(test.getInput(), test.getExpectedOutput())
-                    : test.getInput();
+            String input = switch (language) {
+                case "python" -> wrapPythonCodeInput(test.getInput(), test.getExpectedOutput());
+                case "cpp" -> wrapCppCodeInput(test.getInput(), test.getExpectedOutput());
+                case "java" -> wrapJavaCodeInput(test.getInput(), test.getExpectedOutput());
+                default -> test.getInput();
+            };
+
             wrappedInputs.add(input); // 🧠 collect input for frontend
 
             System.out.println("🔍 Test Input: " + input);

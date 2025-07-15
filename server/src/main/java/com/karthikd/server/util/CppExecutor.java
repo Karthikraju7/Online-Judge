@@ -2,6 +2,7 @@ package com.karthikd.server.util;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.UUID;
 
@@ -14,6 +15,8 @@ public class CppExecutor {
 
         String jobId = UUID.randomUUID().toString();
         Path outputPath = Path.of("outputs", jobId + ".out");
+
+        Files.createDirectories(outputPath.getParent());
         System.out.println("📤 Output Path: " + outputPath);
 
         // Compile command
