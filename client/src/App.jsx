@@ -7,6 +7,8 @@ import Footer from "./components/Footer";
 import Problems from "./pages/Problems";
 import Question from "./pages/Question";
 import Profile from "./pages/Profile";
+import AdminPanel from "./pages/AdminPanel";
+import ProtectRoute from "./components/ProtectRoute";
 import { Toaster } from "react-hot-toast";
 import { useAuth } from "./context/AuthContext";
 
@@ -24,6 +26,14 @@ const App = () => {
           <Route path="/problems" element={<Problems />} />
           <Route path="/problems/:slug" element={<Question />} />
           <Route path="/profile" element={<Profile />} />
+          <Route
+            path="/admin"
+            element={
+              <ProtectRoute role="admin">
+                <AdminPanel />
+              </ProtectRoute>
+            }
+          />
         </Routes>
       </div>
       <Footer />
@@ -31,6 +41,5 @@ const App = () => {
     </div>
   );
 };
-
 
 export default App;

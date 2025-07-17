@@ -5,7 +5,11 @@ import toast from "react-hot-toast";
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [authUser, setAuthUser] = useState(null);
+  const [authUser, setAuthUser] = useState(() => {
+    const savedUser = localStorage.getItem("authUser");
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
+
   const navigate = useNavigate();
 
   const loginOrRegister = async (mode, credentials) => {
@@ -27,25 +31,32 @@ export const AuthProvider = ({ children }) => {
         body: JSON.stringify(credentials),
       });
 
-      if (mode === "login") {
-          const isJson = res.headers.get("content-type")?.includes("application/json");
-          const data = isJson ? await res.json() : await res.text();
+      if (mode === "login" || mode === "admin-login") {
+        const isJson = res.headers.get("content-type")?.includes("application/json");
+        const data = isJson ? await res.json() : await res.text();
+        console.log(`${mode} response:`, data);
 
-          if (res.ok) {
-            setAuthUser({ email: data.email, username: data.username });
-            toast.success("Login successful");
-            navigate("/");
-          } else {
-            toast.error(data); // plain text error from backend
-          }
-        }  else {
-        const message = await res.text();
         if (res.ok) {
-          setAuthUser({ email: credentials.email, username: credentials.username });
-          toast.success(message); // e.g. "User registered successfully"
+          const user = { email: data.email, username: data.username, role: data.role };
+          setAuthUser(user);
+          localStorage.setItem("authUser", JSON.stringify(user));
+          toast.success(`${mode === "admin-login" ? "Admin login" : "Login"} successful`);
           navigate("/");
         } else {
-          toast.error(message);
+          const errorMessage = typeof data === "string" ? data : data.message || "Login failed";
+          toast.error(errorMessage);
+        }
+      } else if (mode === "register") {
+        const data = await res.json();
+        if (res.ok) {
+          const user = { email: data.email, username: data.username, role: data.role };
+          setAuthUser(user);
+          localStorage.setItem("authUser", JSON.stringify(user));
+          toast.success("User registered successfully");
+          navigate("/");
+        } else {
+          const errorMessage = data.message || "Registration failed";
+          toast.error(errorMessage);
         }
       }
     } catch (err) {
@@ -56,6 +67,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     setAuthUser(null);
+    localStorage.removeItem("authUser");
     toast.success("Logged out successfully.");
     navigate("/");
   };

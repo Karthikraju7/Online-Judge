@@ -1,10 +1,12 @@
 import React, { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from "../context/AuthContext"; 
 
 const words = ['Interviews', 'DSA'];
 
 function Home() {
   const navigate = useNavigate();
+  const { authUser } = useAuth();
   const spansRef = useRef([]);
 
   useEffect(() => {
@@ -47,14 +49,19 @@ function Home() {
             </span>
           </span>
         </div>
-
         <button
-          onClick={() => navigate('/problems')}
-          className="text-white border border-white px-6 py-3 rounded cursor-pointer 
-          hover:bg-white hover:text-black transition text-base sm:text-lg"
-        >
-          Practice: Problems →
-        </button>
+            onClick={() => {
+              if (authUser) {
+                navigate('/problems');
+              } else {
+                navigate('/login');
+              }
+            }}
+            className="text-white border border-white px-6 py-3 rounded cursor-pointer 
+            hover:bg-white hover:text-black transition text-base sm:text-lg"
+            >
+            Practice: Problems →
+    </button>
       </main>
     </div>
   );

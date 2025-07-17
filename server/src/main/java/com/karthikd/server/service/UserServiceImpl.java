@@ -1,5 +1,6 @@
 package com.karthikd.server.service;
 
+import com.karthikd.server.entity.Role;
 import com.karthikd.server.entity.User;
 import com.karthikd.server.model.UserModel;
 import com.karthikd.server.repository.UserRepository;
@@ -31,6 +32,7 @@ public class UserServiceImpl implements UserService{
         user.setEmail(userModel.getEmail());
         user.setUsername(userModel.getUsername());
         user.setPassword(passwordEncoder.encode(userModel.getPassword()));
+        user.setRole(Role.USER);
         userRepository.save(user);
         return user;
     }
@@ -38,7 +40,8 @@ public class UserServiceImpl implements UserService{
     @Override
     public User loginAndFetchUser(String email, String password) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Email not registered"));
+                .filter(u -> u.getRole() == Role.USER) // ✅ Only allow USER role
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
         if (!passwordEncoder.matches(password, user.getPassword())) {
             throw new RuntimeException("Invalid password");
@@ -46,4 +49,19 @@ public class UserServiceImpl implements UserService{
 
         return user;
     }
+
+    @Override
+    public User loginAndFetchAdmin(String email, String password) {
+        User user = userRepository.findByEmail(email)
+                .filter(u -> u.getRole() == Role.ADMIN)
+                .orElseThrow(() -> new RuntimeException("Admin not found"));
+
+        if (!passwordEncoder.matches(password, user.getPassword())) {
+            throw new RuntimeException("Invalid password");
+        }
+
+        return user;
+    }
+
+
 }

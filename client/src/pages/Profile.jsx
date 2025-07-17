@@ -12,6 +12,8 @@ const Profile = () => {
     );
   }
 
+  const displayRole = authUser.role ? authUser.role.toUpperCase() : "USER";
+
   return (
     <div className="h-screen bg-black text-white flex flex-col items-center justify-center px-4 py-8">
       <div
@@ -30,6 +32,11 @@ const Profile = () => {
           <div className="flex justify-between border-b border-gray-700 pb-2">
             <span className="text-gray-400">Email</span>
             <span className="text-white font-medium">{authUser.email}</span>
+          </div>
+
+          <div className="flex justify-between border-b border-gray-700 pb-2">
+            <span className="text-gray-400">Role</span>
+            <span className="text-white font-medium">{displayRole}</span>
           </div>
 
           <div className="flex justify-between items-center">

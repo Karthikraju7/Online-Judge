@@ -4,10 +4,13 @@ import { FiEye, FiEyeOff } from "react-icons/fi";
 
 const Login = () => {
   const [isLogin, setIsLogin] = useState(true);
+  const [isAdminMode, setIsAdminMode] = useState(false);
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [username, setUsername] = useState("");
+
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -15,27 +18,62 @@ const Login = () => {
 
   const toggleForm = () => setIsLogin(!isLogin);
 
+  const handleUserTypeChange = (type) => {
+    setIsAdminMode(type === "admin");
+    setIsLogin(true); // always login mode for admin
+    setEmail("");
+    setPassword("");
+    setConfirmPassword("");
+    setUsername("");
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const role = isAdminMode ? "admin" : "user";
 
     const credentials = {
       email,
       password,
-      ...(isLogin ? {} : { username, confirmPassword }),
+      role,
+      ...(isLogin || isAdminMode ? {} : { username, confirmPassword }),
     };
 
-    await loginOrRegister(isLogin ? "login" : "register", credentials);
+    // Use admin-login endpoint if admin mode, else login or register
+    const endpoint = isAdminMode ? "admin-login" : isLogin ? "login" : "register";
+
+    await loginOrRegister(endpoint, credentials);
   };
 
   return (
     <div className="h-full flex items-center justify-center bg-black text-white px-4">
       <div className="bg-gray-900 rounded-2xl shadow-xl w-full max-w-md p-8">
+        {/* Admin/User toggle */}
+        <div className="flex justify-center gap-4 mb-6">
+          <button
+            className={`px-4 py-2 rounded-xl cursor-pointer ${
+              isAdminMode ? "bg-blue-600 text-white" : "bg-gray-800 text-gray-400"
+            }`}
+            onClick={() => handleUserTypeChange("admin")}
+          >
+            Admin
+          </button>
+          <button
+            className={`px-4 py-2 rounded-xl cursor-pointer ${
+              !isAdminMode ? "bg-blue-600 text-white" : "bg-gray-800 text-gray-400"
+            }`}
+            onClick={() => handleUserTypeChange("user")}
+          >
+            User
+          </button>
+        </div>
+
         <h2 className="text-2xl font-bold mb-6 text-center">
           {isLogin ? "Login to Your Account" : "Create an Account"}
         </h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {!isLogin && (
+          {!isLogin && !isAdminMode && (
             <input
               type="text"
               placeholder="Username"
@@ -53,7 +91,7 @@ const Login = () => {
             className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600"
           />
 
-          {/* Password Field */}
+          {/* Password */}
           <div className="relative">
             <input
               type={showPassword ? "text" : "password"}
@@ -70,8 +108,8 @@ const Login = () => {
             </div>
           </div>
 
-          {/* Confirm Password Field */}
-          {!isLogin && (
+          {/* Confirm Password */}
+          {!isLogin && !isAdminMode && (
             <div className="relative">
               <input
                 type={showConfirmPassword ? "text" : "password"}
@@ -97,15 +135,17 @@ const Login = () => {
           </button>
         </form>
 
-        <p className="text-center mt-4 text-sm text-gray-400">
-          {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
-          <button
-            onClick={toggleForm}
-            className="text-blue-500 font-semibold hover:underline cursor-pointer"
-          >
-            {isLogin ? "Register" : "Login"}
-          </button>
-        </p>
+        {!isAdminMode && (
+          <p className="text-center mt-4 text-sm text-gray-400">
+            {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
+            <button
+              onClick={toggleForm}
+              className="text-blue-500 font-semibold hover:underline cursor-pointer"
+            >
+              {isLogin ? "Register" : "Login"}
+            </button>
+          </p>
+        )}
       </div>
     </div>
   );

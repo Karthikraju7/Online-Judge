@@ -7,4 +7,6 @@ public interface UserService {
     User registerUser(UserModel userModel);
 
     User loginAndFetchUser(String email, String password);
+
+    User loginAndFetchAdmin(String email, String password);
 }
