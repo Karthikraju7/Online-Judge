@@ -16,9 +16,21 @@ public class Problem {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    private String title; // ✅ New field
     private String slug;
+    private String difficulty; // ✅ New field: Easy/Medium/Hard
+
+    @Column(columnDefinition = "TEXT")
+    private String description;
+
+    @Column(columnDefinition = "TEXT")
+    private String sampleInput;
+
+    @Column(columnDefinition = "TEXT")
+    private String sampleOutput;
 
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @JoinColumn(name = "problem_id")
     private List<TestCase> hiddenTestCases;
+
 }

@@ -3,7 +3,11 @@ package com.karthikd.server.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.karthikd.server.entity.Problem;
 import com.karthikd.server.entity.TestCase;
+import com.karthikd.server.entity.User;
+import com.karthikd.server.entity.UserProblem;
 import com.karthikd.server.repository.ProblemRepository;
+import com.karthikd.server.repository.UserProblemRepository;
+import com.karthikd.server.repository.UserRepository;
 import com.karthikd.server.service.CodeExecutionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -28,32 +32,46 @@ public class CodeExecutionController {
     private CodeExecutionService executionService;
     @Autowired
     private ProblemRepository problemRepository;
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private UserProblemRepository userProblemRepository;
+
 
     @PostMapping("/run")
     public Map<String, String> runCode(@RequestBody Map<String, String> request) {
         try {
             String rawCode = request.get("code");
             String input = request.get("input");
-            System.out.println("Received input: " + input);
             String language = request.get("language");
             String slug = request.get("slug");
 
             String finalCode = switch (language) {
                 case "python" -> wrapPythonCode(rawCode, slug);
                 case "cpp" -> wrapCppCode(rawCode, slug);
-                case "java" -> wrapJavaCode(rawCode, slug); // ✅ add this
+                case "java" -> wrapJavaCode(rawCode, slug);
                 default -> rawCode;
             };
-
-
 
             System.out.println("🛠️ Run Request Received:");
             System.out.println("Language: " + language);
             System.out.println("Input: " + input);
             System.out.println("Code:\n" + finalCode);
 
-            String output = executionService.runCode(language, finalCode, input);
-            return Map.of("output", output);
+            String output = executionService.runCode(language, finalCode, input).trim();
+
+            // 🧠 Fetch expected output from DB
+            Problem problem = problemRepository.findBySlug(slug);
+            String expected = problem.getSampleOutput().trim();
+
+            // 🧪 Compare outputs
+            String verdict = output.equals(expected) ? "✅ Correct" : "❌ Incorrect";
+
+            return Map.of(
+                    "output", output,
+                    "verdict", verdict
+            );
         } catch (Exception e) {
             e.printStackTrace();
             return Map.of("output", "❌ Server error: " + e.getMessage());
@@ -65,6 +83,7 @@ public class CodeExecutionController {
         String code = request.get("code");
         String language = request.get("language");
         String slug = request.get("slug");
+        String email = request.get("email"); // ✅ REQUIRED
 
         Problem problem = problemRepository.findBySlug(slug);
         if (problem == null) {
@@ -74,7 +93,6 @@ public class CodeExecutionController {
         int passed = 0;
         int total = problem.getHiddenTestCases().size();
 
-        // Wrap code once for Python
         String finalCode = switch (language) {
             case "python" -> wrapPythonCode(code, slug);
             case "cpp" -> wrapCppCode(code, slug);
@@ -82,8 +100,6 @@ public class CodeExecutionController {
             default -> code;
         };
 
-
-        // ✅ Collect test inputs for debugging
         List<String> wrappedInputs = new ArrayList<>();
 
         for (TestCase test : problem.getHiddenTestCases()) {
@@ -94,30 +110,37 @@ public class CodeExecutionController {
                 default -> test.getInput();
             };
 
-            wrappedInputs.add(input); // 🧠 collect input for frontend
-
-            System.out.println("🔍 Test Input: " + input);
-            System.out.println("🔍 Expected Output: " + test.getExpectedOutput());
+            wrappedInputs.add(input);
 
             String output = executionService.runCode(language, finalCode, input).trim();
-            System.out.println("🔁 Actual Output: " + output);
 
-            if (output.contains("Success")) {
+            // 🟡 Debug logs — ADD HERE
+            System.out.println("🔍 Hidden TestCase Input: " + input.replace("\n", "\\n"));
+            System.out.println("🧾 Actual Output: " + output);
+            System.out.println("🎯 Expected Output: " + test.getExpectedOutput().trim());
+
+            if (output.equals(test.getExpectedOutput().trim())) {
                 passed++;
-            } else{
+            } else {
                 break;
             }
+        }
+
+
+        if (passed == total) {
+            User user = userRepository.findByEmail(email).orElseThrow();
+            userProblemRepository.findByUserAndProblem(user, problem)
+                    .orElseGet(() -> userProblemRepository.save(new UserProblem(user, problem, true)));
         }
 
         String verdict = passed == total
                 ? "✅ Accepted"
                 : "❌ " + passed + "/" + total + " test cases passed";
 
-        // 🧪 Return inputs and verdict to frontend
         return Map.of(
-                "verdict", verdict,
-                "inputs", wrappedInputs
+                "verdict", verdict
         );
     }
+
 }
 

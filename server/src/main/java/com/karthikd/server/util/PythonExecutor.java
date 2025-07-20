@@ -7,25 +7,17 @@ import java.nio.file.Path;
 public class PythonExecutor {
 
     public static String runPython(String code, String input) throws IOException, InterruptedException {
-        // 1. Save code to file
         Path codeFilePath = FileUtil.writeCodeToFile(code, "py");
-
-        // 2. Save input to file
         Path inputFilePath = FileUtil.writeInputToFile(input);
 
-        // 3. Prepare command: python <filename>.py < input.txt
-        String[] command = {
-                "python", codeFilePath.toString()
-        };
+        String[] command = { "python", codeFilePath.toString() };
 
         ProcessBuilder processBuilder = new ProcessBuilder(command);
         processBuilder.redirectInput(inputFilePath.toFile());
-        processBuilder.redirectErrorStream(true); // merge stderr into stdout
+        processBuilder.redirectErrorStream(true);
 
-        Files.writeString(inputFilePath, input);
         Process process = processBuilder.start();
 
-        // 4. Capture output
         BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
         StringBuilder output = new StringBuilder();
         String line;
@@ -39,6 +31,6 @@ public class PythonExecutor {
             return "Error during Python execution.\n" + output.toString();
         }
 
-        return output.toString();
+        return output.toString().trim();
     }
 }
