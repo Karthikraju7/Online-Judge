@@ -11,6 +11,7 @@ import com.karthikd.server.repository.UserProblemRepository;
 import com.karthikd.server.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import jakarta.transaction.Transactional;
 
 import java.util.List;
 
@@ -72,5 +73,54 @@ public class ProblemServiceImpl implements ProblemService{
         }).toList();
     }
 
+    @Override
+    public String addFullProblem(AddProblemRequest request) {
+        Problem problem = new Problem();
+        problem.setTitle(request.getTitle());
+        problem.setSlug(request.getSlug());
+        problem.setDifficulty(request.getDifficulty());
+        problem.setDescription(request.getDescription());
+        problem.setSampleInput(request.getSampleInput());
+        problem.setSampleOutput(request.getSampleOutput());
 
+        List<TestCase> hiddenTestCases = request.getHiddenTestCases()
+                .stream()
+                .map(dto -> new TestCase(null, dto.getInput(), dto.getExpectedOutput()))
+                .toList();
+        problem.setHiddenTestCases(hiddenTestCases);
+
+        problemRepository.save(problem);
+
+        return "Problem with test cases added successfully";
+    }
+
+    @Override
+    @Transactional
+    public String updateProblem(String slug, AddProblemRequest request) {
+        Problem existing = problemRepository.findBySlug(slug);
+        if (existing == null) {
+            throw new RuntimeException("Problem not found with slug: " + slug);
+        }
+
+        // Update fields
+        existing.setTitle(request.getTitle());
+        existing.setDescription(request.getDescription());
+        existing.setDifficulty(request.getDifficulty());
+        existing.setSampleInput(request.getSampleInput());
+        existing.setSampleOutput(request.getSampleOutput());
+
+        // Clear old test cases
+        existing.getHiddenTestCases().clear();
+
+        // Add new test cases
+        List<TestCase> updatedCases = request.getHiddenTestCases().stream()
+                .map(tc -> new TestCase(null, tc.getInput(), tc.getExpectedOutput()))
+                .toList();
+
+        existing.getHiddenTestCases().addAll(updatedCases);
+
+        problemRepository.save(existing);
+
+        return "Problem updated successfully";
+    }
 }

@@ -11,4 +11,8 @@ public interface ProblemService {
     Problem getBySlug(String slug);
 
     List<ProblemSummaryDTO> getAllProblemsWithSolvedStatus(String email);
+
+    String addFullProblem(AddProblemRequest  request);
+
+    String updateProblem(String slug, AddProblemRequest request);
 }

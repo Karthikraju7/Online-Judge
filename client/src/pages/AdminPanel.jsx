@@ -6,20 +6,10 @@ const initialForm = {
   slug: "",
   difficulty: "Easy",
   description: "",
-  starterCodeJson: {
-    cpp: "",
-    java: "",
-    python: ""
-  },
-  boilerplateCodeJson: {      // ✅ NEW
-    cpp: "",
-    java: "",
-    python: ""
-  },
   sampleTestCasesJson: [
     { input: "", expectedOutput: "" }
   ],
-  hiddenTestCases: [          // ✅ NEW
+  hiddenTestCases: [
     { input: "", expectedOutput: "" }
   ]
 };
@@ -32,7 +22,7 @@ const AdminPanel = () => {
 
   const fetchProblems = async () => {
     try {
-      const res = await fetch("http://localhost:8080/problems/all");
+      const res = await fetch("http://localhost:8080/problems/admin/all");
       const data = await res.json();
       setProblems(data);
     } catch (err) {
@@ -44,13 +34,10 @@ const AdminPanel = () => {
     fetchProblems();
   }, []);
 
-  const handleChange = (e, field, index = null, lang = null) => {
+  const handleChange = (e, field, index = null) => {
     if (field === "sampleTestCasesJson" || field === "hiddenTestCases") {
       const updated = [...form[field]];
       updated[index][e.target.name] = e.target.value;
-      setForm({ ...form, [field]: updated });
-    } else if (field === "starterCodeJson" || field === "boilerplateCodeJson") {
-      const updated = { ...form[field], [lang]: e.target.value };
       setForm({ ...form, [field]: updated });
     } else {
       setForm({ ...form, [field]: e.target.value });
@@ -64,43 +51,54 @@ const AdminPanel = () => {
   };
 
   const openEditForm = async (slug) => {
-    try {
-      const res = await fetch(`http://localhost:8080/problems/${slug}`);
-      const data = await res.json();
-      setForm(data);
-      setIsEditMode(true);
-      setShowForm(true);
-    } catch (err) {
-      toast.error("Error loading problem.");
-    }
-  };
+  try {
+    const res = await fetch(`http://localhost:8080/problems/${slug}`);
+    const data = await res.json();
 
-  const convertToBackendPayload = () => {
-      const { starterCodeJson, boilerplateCodeJson, ...rest } = form;
-
-      const codes = Object.keys(starterCodeJson).map((lang) => ({
-        language: lang,
-        starterCode: starterCodeJson[lang],
-        boilerplateCode: boilerplateCodeJson[lang],
-      }));
-
-      const { input: sampleInput, expectedOutput: sampleOutput } = form.sampleTestCasesJson[0] || {};
-
-      return {
-        ...rest,
-        sampleInput,
-        sampleOutput,
-        codes,
-        hiddenTestCases: form.hiddenTestCases,
-      };
+    const filledForm = {
+      title: data.title || "",
+      slug: data.slug || "",
+      difficulty: data.difficulty || "Easy",
+      description: data.description || "",
+      sampleTestCasesJson: [
+        {
+          input: data.sampleInput || "",
+          expectedOutput: data.sampleOutput || ""
+        }
+      ],
+      hiddenTestCases: Array.isArray(data.hiddenTestCases)
+        ? data.hiddenTestCases
+        : []
     };
 
+    setForm(filledForm);
+    setIsEditMode(true);
+    setShowForm(true);
+  } catch (err) {
+    toast.error("Error loading problem.");
+  }
+};
+
+  const convertToBackendPayload = () => {
+    const { sampleTestCasesJson } = form;
+    const { input: sampleInput, expectedOutput: sampleOutput } = sampleTestCasesJson[0] || {};
+
+    return {
+      title: form.title,
+      slug: form.slug,
+      difficulty: form.difficulty,
+      description: form.description,
+      sampleInput,
+      sampleOutput,
+      hiddenTestCases: form.hiddenTestCases
+    };
+  };
 
   const handleSubmit = async () => {
     const method = isEditMode ? "PUT" : "POST";
     const endpoint = isEditMode
-      ? `http://localhost:8080/problems/update/${form.slug}`
-      : "http://localhost:8080/problems/add";
+      ? `http://localhost:8080/problems/${form.slug}`
+      : "http://localhost:8080/problems/add-full";
 
     const payload = convertToBackendPayload();
 
@@ -124,15 +122,11 @@ const AdminPanel = () => {
     }
   };
 
-
   return (
     <div className="min-h-screen bg-black text-white p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Admin Problem Panel</h1>
-        <button
-          className="bg-green-600 px-4 py-2 rounded"
-          onClick={openAddForm}
-        >
+        <button className="bg-green-600 px-4 py-2 rounded cursor-pointer" onClick={openAddForm}>
           + Add Problem
         </button>
       </div>
@@ -154,7 +148,7 @@ const AdminPanel = () => {
           <div>{p.difficulty}</div>
           <div>
             <button
-              className="text-blue-400 hover:underline"
+              className="text-blue-400 hover:underline cursor-pointer"
               onClick={() => openEditForm(p.slug)}
             >
               Edit
@@ -189,43 +183,22 @@ const AdminPanel = () => {
               <select
                 value={form.difficulty}
                 onChange={(e) => handleChange(e, "difficulty")}
-                className="w-full p-2 bg-gray-800 rounded"
+                className="w-full p-2 bg-gray-800 rounded cursor-pointer"
               >
                 <option>Easy</option>
                 <option>Medium</option>
                 <option>Hard</option>
               </select>
               <textarea
-                placeholder="Description (Markdown/Text)"
+                placeholder="Description"
                 value={form.description}
                 onChange={(e) => handleChange(e, "description")}
                 className="w-full p-2 bg-gray-800 rounded h-32"
               />
 
-              {["cpp", "java", "python"].map((lang) => (
-                <textarea
-                  key={lang}
-                  placeholder={`${lang.toUpperCase()} Starter Code`}
-                  value={form.starterCodeJson[lang]}
-                  onChange={(e) => handleChange(e, "starterCodeJson", null, lang)}
-                  className="w-full p-2 bg-gray-800 rounded"
-                />
-              ))}
-
-              {/* ✅ Boilerplate Code Section */}
-              {["cpp", "java", "python"].map((lang) => (
-                <textarea
-                  key={lang}
-                  placeholder={`${lang.toUpperCase()} Boilerplate Code`}
-                  value={form.boilerplateCodeJson[lang]}
-                  onChange={(e) => handleChange(e, "boilerplateCodeJson", null, lang)}
-                  className="w-full p-2 bg-gray-700 rounded"
-                />
-              ))}
-
-              {/* ✅ Sample Test Cases Section */}
+              {/* ✅ Sample Test Cases */}
               <div>
-                <h4 className="font-bold mb-2">Sample Test Cases</h4>
+                <h4 className="font-bold mb-2">Sample Test Case</h4>
                 {form.sampleTestCasesJson.map((test, idx) => (
                   <div key={idx} className="mb-2">
                     <input
@@ -246,7 +219,7 @@ const AdminPanel = () => {
                 ))}
               </div>
 
-              {/* ✅ Hidden Test Cases Section */}
+              {/* ✅ Hidden Test Cases */}
               <div>
                 <h4 className="font-bold mb-2">Hidden Test Cases</h4>
                 {form.hiddenTestCases.map((test, idx) => (
@@ -271,13 +244,10 @@ const AdminPanel = () => {
                   onClick={() =>
                     setForm({
                       ...form,
-                      hiddenTestCases: [
-                        ...form.hiddenTestCases,
-                        { input: "", expectedOutput: "" }
-                      ]
+                      hiddenTestCases: [...form.hiddenTestCases, { input: "", expectedOutput: "" }]
                     })
                   }
-                  className="text-green-400 mt-1 text-sm"
+                  className="text-green-400 mt-1 text-sm cursor-pointer"
                 >
                   + Add Hidden Test Case
                 </button>
@@ -287,13 +257,13 @@ const AdminPanel = () => {
             <div className="flex justify-end gap-3 mt-6">
               <button
                 onClick={() => setShowForm(false)}
-                className="px-4 py-2 bg-gray-700 rounded"
+                className="px-4 py-2 bg-gray-700 rounded cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSubmit}
-                className="px-4 py-2 bg-blue-600 rounded"
+                className="px-4 py-2 bg-blue-600 rounded cursor-pointer"
               >
                 {isEditMode ? "Update" : "Add"}
               </button>

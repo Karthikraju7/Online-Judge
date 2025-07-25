@@ -32,7 +32,7 @@ public class AuthController {
             return ResponseEntity.ok(response);
         }
         catch (RuntimeException ex){
-            return ResponseEntity.badRequest().body(ex.getMessage());
+            return buildError(ex.getMessage(), 400);
         }
     }
 
@@ -53,7 +53,7 @@ public class AuthController {
 
             return ResponseEntity.ok(response);
         } catch (RuntimeException ex) {
-            return ResponseEntity.status(401).body(ex.getMessage());
+            return buildError(ex.getMessage(), 400);
         }
     }
 
@@ -74,9 +74,17 @@ public class AuthController {
 
             return ResponseEntity.ok(response);
         } catch (RuntimeException ex) {
-            return ResponseEntity.status(401).body(ex.getMessage());
+            return buildError(ex.getMessage(), 400);
         }
     }
+
+    // Utility method to build error JSON response
+    private ResponseEntity<?> buildError(String message, int statusCode) {
+        Map<String, String> error = new HashMap<>();
+        error.put("message", message);
+        return ResponseEntity.status(statusCode).body(error);
+    }
+
 
 
 }

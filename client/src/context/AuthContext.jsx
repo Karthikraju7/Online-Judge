@@ -16,7 +16,7 @@ export const AuthProvider = ({ children }) => {
     if (
       !credentials.email ||
       !credentials.password ||
-      (mode === "register" && !credentials.username)
+      (mode === "register" && (!credentials.username || !credentials.confirmPassword))
     ) {
       toast.error("Please fill in all required fields.");
       return;
@@ -55,7 +55,7 @@ export const AuthProvider = ({ children }) => {
           toast.success("User registered successfully");
           navigate("/");
         } else {
-          const errorMessage = data.message || "Registration failed";
+          const errorMessage = typeof data === "string" ? data : data.message || "Registration failed";
           toast.error(errorMessage);
         }
       }
