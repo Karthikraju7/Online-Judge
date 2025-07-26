@@ -18,6 +18,25 @@ const Question = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { authUser } = useAuth();
 
+  const defaultTemplates = {
+    cpp: `#include <bits/stdc++.h>
+using namespace std;
+
+int main() {
+    // Hey, Write here
+    return 0;
+}`,
+    java: `import java.util.*;
+
+public class Main {
+    public static void main(String[] args) {
+        // Hey, Write here
+    }
+}`,
+    python: `# Hey, Write here
+print("Hello World")`
+  };
+
   useEffect(() => {
     const fetchProblem = async () => {
       try {
@@ -25,7 +44,7 @@ const Question = () => {
         const data = await res.json();
         setProblem(data);
 
-        // Sample input to editor
+        // Sample input
         if (data.sampleInput) {
           setInput(data.sampleInput);
         }
@@ -36,6 +55,14 @@ const Question = () => {
 
     fetchProblem();
   }, [slug]);
+
+  // Load saved code or default template
+  useEffect(() => {
+    const savedCode = localStorage.getItem(
+      `code_${authUser?.email}_${slug}_${selectedLang}`
+    );
+    setCode(savedCode || defaultTemplates[selectedLang]);
+  }, [selectedLang, authUser, slug]);
 
   const handleRun = async () => {
     setIsLoading(true);
@@ -53,10 +80,12 @@ const Question = () => {
 
       const data = await res.json();
       if (data.verdict === "✅ Correct") {
-          setOutput("✅ Success");
-        } else {
-          setOutput(`❌ Failed\nYour Output:\n${data.output}\nExpected Output:\n${problem.sampleOutput}`);
-        }
+        setOutput("✅ Success");
+      } else {
+        setOutput(
+          `❌ Failed\nYour Output:\n${data.output}\nExpected Output:\n${problem.sampleOutput}`
+        );
+      }
     } catch (err) {
       console.error("Run failed:", err);
       setOutput("❌ Server error");
@@ -89,8 +118,7 @@ const Question = () => {
     }
   };
 
-  if (!problem)
-    return <div className="text-white p-4">Loading problem...</div>;
+  if (!problem) return <div className="text-white p-4">Loading problem...</div>;
 
   return (
     <PanelGroup
@@ -115,7 +143,7 @@ const Question = () => {
             </span>
           </div>
 
-          <pre className="whitespace-pre-wrap text-sm mb-6">
+          <pre className="whitespace-pre-wrap text-m mb-6">
             {problem.description}
           </pre>
 
@@ -166,7 +194,7 @@ const Question = () => {
 
               <div className="mb-2">
                 <select
-                  className="bg-gray-800 text-white p-2 rounded cursor-pointer"
+                  className="bg-gray-800 text-white p-2 rounded cursor-pointer ml-1"
                   value={selectedLang}
                   onChange={(e) => setSelectedLang(e.target.value)}
                 >
@@ -186,13 +214,21 @@ const Question = () => {
                       : "cpp"
                   }
                   value={code}
-                  onChange={(newCode) => setCode(newCode)}
+                  onChange={(newCode) => {
+                    setCode(newCode);
+                    localStorage.setItem(
+                      `code_${authUser?.email}_${slug}_${selectedLang}`,
+                      newCode
+                    );
+                  }}
                   theme="vs-dark"
                   options={{
                     fontSize: 14,
+                    fontFamily: "Fira Code, monospace",
+                    fontLigatures: true,
                     minimap: { enabled: false },
                     wordWrap: "on",
-                    tabSize: 12,
+                    tabSize: 4,
                     automaticLayout: true,
                     lineNumbers: "on",
                   }}
@@ -209,9 +245,7 @@ const Question = () => {
 
           {/* Output */}
           <Panel id="output-panel" defaultSize={10} minSize={10}>
-            <div
-              className="text-sm bg-black/40 p-3 rounded border border-white/10 h-full overflow-auto"
-            >
+            <div className="text-sm bg-black/40 p-3 rounded border border-white/10 h-full overflow-auto">
               <strong>Output:</strong>
               <pre className="text-gray-300 whitespace-pre-wrap break-words">
                 {output}
