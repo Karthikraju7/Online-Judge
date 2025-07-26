@@ -9,4 +9,7 @@ public interface UserService {
     User loginAndFetchUser(String email, String password);
 
     User loginAndFetchAdmin(String email, String password);
+
+    // --- New Method ---
+    User verifyUser(String token);
 }

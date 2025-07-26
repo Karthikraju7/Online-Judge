@@ -11,6 +11,7 @@ import AdminPanel from "./pages/AdminPanel";
 import ProtectRoute from "./components/ProtectRoute";
 import { Toaster } from "react-hot-toast";
 import { useAuth } from "./context/AuthContext";
+import Verify from "./pages/Verify";
 
 const App = () => {
   const { authUser } = useAuth(); 
@@ -26,6 +27,7 @@ const App = () => {
           <Route path="/problems" element={<Problems />} />
           <Route path="/problems/:slug" element={<Question />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/verify" element={<Verify />} />
           <Route
             path="/admin"
             element={

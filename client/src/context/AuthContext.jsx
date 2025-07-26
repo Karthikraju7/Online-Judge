@@ -25,17 +25,15 @@ export const AuthProvider = ({ children }) => {
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/${mode}`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(credentials),
       });
 
-      if (mode === "login" || mode === "admin-login") {
-        const isJson = res.headers.get("content-type")?.includes("application/json");
-        const data = isJson ? await res.json() : await res.text();
-        console.log(`${mode} response:`, data);
+      const data = await res.json();
+      console.log(`${mode} response:`, data);
 
+      // -------- LOGIN & ADMIN LOGIN --------
+      if (mode === "login" || mode === "admin-login") {
         if (res.ok) {
           const user = { email: data.email, username: data.username, role: data.role };
           setAuthUser(user);
@@ -43,19 +41,22 @@ export const AuthProvider = ({ children }) => {
           toast.success(`${mode === "admin-login" ? "Admin login" : "Login"} successful`);
           navigate("/");
         } else {
-          const errorMessage = typeof data === "string" ? data : data.message || "Login failed";
-          toast.error(errorMessage);
+          const errorMessage = data.message || "Login failed";
+          if (errorMessage.includes("verify your email")) {
+            toast.error("Please verify your email before logging in.");
+          } else {
+            toast.error(errorMessage);
+          }
         }
-      } else if (mode === "register") {
-        const data = await res.json();
+      }
+
+      // -------- REGISTER --------
+      else if (mode === "register") {
         if (res.ok) {
-          const user = { email: data.email, username: data.username, role: data.role };
-          setAuthUser(user);
-          localStorage.setItem("authUser", JSON.stringify(user));
-          toast.success("User registered successfully");
-          navigate("/");
+          toast.success("Registration successful! Please check your email to verify your account within 10 minutes.");
+          navigate("/login");
         } else {
-          const errorMessage = typeof data === "string" ? data : data.message || "Registration failed";
+          const errorMessage = data.message || "Registration failed";
           toast.error(errorMessage);
         }
       }

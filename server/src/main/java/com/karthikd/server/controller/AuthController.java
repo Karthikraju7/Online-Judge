@@ -6,9 +6,7 @@ import com.karthikd.server.model.UserModel;
 import com.karthikd.server.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -78,13 +76,24 @@ public class AuthController {
         }
     }
 
+    @GetMapping("/verify")
+    public ResponseEntity<?> verifyUser(@RequestParam("token") String token) {
+        try {
+            User user = userService.verifyUser(token);
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "Email verified successfully! You can now login.");
+            response.put("email", user.getEmail());
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException ex) {
+            return buildError(ex.getMessage(), 400);
+        }
+    }
+
+
     // Utility method to build error JSON response
     private ResponseEntity<?> buildError(String message, int statusCode) {
         Map<String, String> error = new HashMap<>();
         error.put("message", message);
         return ResponseEntity.status(statusCode).body(error);
     }
-
-
-
 }

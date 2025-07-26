@@ -1,4 +1,6 @@
-spring.application.name=server
+spring:
+  application:
+    name: server
 
 ---
 
@@ -19,3 +21,15 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQL8Dialect
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: karthik878794@gmail.com
+    password: niux ymwf rmds pbuc
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true

@@ -2,10 +2,12 @@ package com.karthikd.server.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import java.time.LocalDateTime;
 
 @Entity
 @Data
 public class User {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -22,4 +24,14 @@ public class User {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role;
+
+    // --- New Fields for Email Verification ---
+    @Column(nullable = false)
+    private boolean verified = false;
+
+    @Column
+    private String verificationToken;
+
+    @Column
+    private LocalDateTime tokenExpiry;
 }
