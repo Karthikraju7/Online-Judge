@@ -16,7 +16,7 @@ const Question = () => {
   const [output, setOutput] = useState("");
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { authUser } = useAuth();
+  const { authUser, authFetch } = useAuth(); // ✅ Use authFetch
 
   const defaultTemplates = {
     cpp: `#include <bits/stdc++.h>
@@ -40,11 +40,10 @@ print("Hello World")`
   useEffect(() => {
     const fetchProblem = async () => {
       try {
-        const res = await fetch(`http://localhost:8080/problems/${slug}`);
+        const res = await authFetch(`http://localhost:8080/problems/${slug}`); // ✅ JWT included
         const data = await res.json();
         setProblem(data);
 
-        // Sample input
         if (data.sampleInput) {
           setInput(data.sampleInput);
         }
@@ -54,7 +53,7 @@ print("Hello World")`
     };
 
     fetchProblem();
-  }, [slug]);
+  }, [slug, authFetch]);
 
   // Load saved code or default template
   useEffect(() => {
@@ -67,9 +66,8 @@ print("Hello World")`
   const handleRun = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch("http://localhost:8080/problems/run", {
+      const res = await authFetch("http://localhost:8080/problems/run", {  // ✅ JWT
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           language: selectedLang,
           code,
@@ -97,9 +95,8 @@ print("Hello World")`
   const handleSubmit = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch("http://localhost:8080/problems/submit", {
+      const res = await authFetch("http://localhost:8080/problems/submit", { // ✅ JWT
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           language: selectedLang,
           code,

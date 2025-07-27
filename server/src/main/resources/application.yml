@@ -2,6 +2,7 @@ spring:
   application:
     name: server
 
+
 ---
 
 server:
@@ -9,9 +10,9 @@ server:
 
 spring:
   datasource:
-    url: jdbc:mysql://localhost:3306/online_judge
-    username: root
-    password: "#admin87"
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
@@ -25,11 +26,14 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: karthik878794@gmail.com
-    password: niux ymwf rmds pbuc
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
     properties:
       mail:
         smtp:
           auth: true
           starttls:
             enable: true
+
+jwt:
+  secret: ${JWT_SECRET}

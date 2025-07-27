@@ -3,6 +3,7 @@ package com.karthikd.server.controller;
 import com.karthikd.server.entity.Role;
 import com.karthikd.server.entity.User;
 import com.karthikd.server.model.UserModel;
+import com.karthikd.server.security.JwtUtil;
 import com.karthikd.server.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +17,9 @@ public class AuthController {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private JwtUtil jwtUtil;
 
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@RequestBody UserModel userModel){
@@ -34,7 +38,6 @@ public class AuthController {
         }
     }
 
-
     @PostMapping("/login")
     public ResponseEntity<?> loginAndFetchUser(@RequestBody UserModel userModel){
         try {
@@ -44,7 +47,12 @@ public class AuthController {
                 throw new RuntimeException("User not found");
             }
 
+            // Generate JWT Token
+            String token = jwtUtil.generateToken(user.getEmail(), user.getRole().toString());
+
+            // Response
             Map<String, String> response = new HashMap<>();
+            response.put("token", token);
             response.put("email", user.getEmail());
             response.put("username", user.getUsername());
             response.put("role", user.getRole().toString());
@@ -55,7 +63,6 @@ public class AuthController {
         }
     }
 
-
     @PostMapping("/admin-login")
     public ResponseEntity<?> loginAndFetchAdmin(@RequestBody UserModel userModel){
         try {
@@ -65,7 +72,11 @@ public class AuthController {
                 throw new RuntimeException("Admin not found");
             }
 
+            // Generate JWT Token
+            String token = jwtUtil.generateToken(user.getEmail(), user.getRole().toString());
+
             Map<String, String> response = new HashMap<>();
+            response.put("token", token);
             response.put("email", user.getEmail());
             response.put("username", user.getUsername());
             response.put("role", user.getRole().toString());
@@ -88,7 +99,6 @@ public class AuthController {
             return buildError(ex.getMessage(), 400);
         }
     }
-
 
     // Utility method to build error JSON response
     private ResponseEntity<?> buildError(String message, int statusCode) {

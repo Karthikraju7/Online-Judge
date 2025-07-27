@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
@@ -11,12 +11,48 @@ export const AuthProvider = ({ children }) => {
   });
 
   const navigate = useNavigate();
+  const logoutTimer = useRef(null);
+
+  // Helper to decode JWT token
+  const decodeToken = (token) => {
+    try {
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      return payload;
+    } catch {
+      return null;
+    }
+  };
+
+  // Set Auto Logout Timer
+  const setAutoLogout = (token) => {
+    const decoded = decodeToken(token);
+    if (!decoded || !decoded.exp) return;
+
+    const expiryTime = decoded.exp * 1000 - Date.now(); // ms
+    if (expiryTime <= 0) {
+      logout();
+    } else {
+      logoutTimer.current = setTimeout(() => {
+        toast.error("Session expired. Please login again.");
+        logout();
+      }, expiryTime);
+    }
+  };
+
+  // Run when authUser changes (or on reload)
+  useEffect(() => {
+    if (authUser?.token) {
+      setAutoLogout(authUser.token);
+    }
+    return () => clearTimeout(logoutTimer.current);
+  }, [authUser]);
 
   const loginOrRegister = async (mode, credentials) => {
     if (
       !credentials.email ||
       !credentials.password ||
-      (mode === "register" && (!credentials.username || !credentials.confirmPassword))
+      (mode === "register" &&
+        (!credentials.username || !credentials.confirmPassword))
     ) {
       toast.error("Please fill in all required fields.");
       return;
@@ -32,32 +68,34 @@ export const AuthProvider = ({ children }) => {
       const data = await res.json();
       console.log(`${mode} response:`, data);
 
-      // -------- LOGIN & ADMIN LOGIN --------
       if (mode === "login" || mode === "admin-login") {
         if (res.ok) {
-          const user = { email: data.email, username: data.username, role: data.role };
+          const user = {
+            email: data.email,
+            username: data.username,
+            role: data.role,
+            token: data.token, // Store JWT token
+          };
+
           setAuthUser(user);
           localStorage.setItem("authUser", JSON.stringify(user));
-          toast.success(`${mode === "admin-login" ? "Admin login" : "Login"} successful`);
+          setAutoLogout(data.token);
+
+          toast.success(
+            `${mode === "admin-login" ? "Admin login" : "Login"} successful`
+          );
           navigate("/");
         } else {
-          const errorMessage = data.message || "Login failed";
-          if (errorMessage.includes("verify your email")) {
-            toast.error("Please verify your email before logging in.");
-          } else {
-            toast.error(errorMessage);
-          }
+          toast.error(data.message || "Login failed");
         }
-      }
-
-      // -------- REGISTER --------
-      else if (mode === "register") {
+      } else if (mode === "register") {
         if (res.ok) {
-          toast.success("Registration successful! Please check your email to verify your account within 10 minutes.");
+          toast.success(
+            "Registration successful! Please check your email to verify your account."
+          );
           navigate("/login");
         } else {
-          const errorMessage = data.message || "Registration failed";
-          toast.error(errorMessage);
+          toast.error(data.message || "Registration failed");
         }
       }
     } catch (err) {
@@ -67,14 +105,30 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
+    clearTimeout(logoutTimer.current);
     setAuthUser(null);
     localStorage.removeItem("authUser");
     toast.success("Logged out successfully.");
     navigate("/");
   };
 
+  // Fetch helper that attaches JWT automatically
+  const authFetch = async (url, options = {}) => {
+    const token = authUser?.token;
+    const headers = {
+      ...options.headers,
+      Authorization: token ? `Bearer ${token}` : "",
+      ...(options.method !== "GET"
+        ? { "Content-Type": "application/json" }
+        : {}),
+    };
+    return fetch(url, { ...options, headers });
+  };
+
   return (
-    <AuthContext.Provider value={{ authUser, loginOrRegister, logout }}>
+    <AuthContext.Provider
+      value={{ authUser, loginOrRegister, logout, authFetch }}
+    >
       {children}
     </AuthContext.Provider>
   );
