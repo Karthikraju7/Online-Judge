@@ -21,14 +21,19 @@ const AdminPanel = () => {
   const [isEditMode, setIsEditMode] = useState(false);
 
   const fetchProblems = async () => {
-    try {
-      const res = await fetch("http://localhost:8080/problems/admin/all");
-      const data = await res.json();
-      setProblems(data);
-    } catch (err) {
-      console.error("Error fetching problems:", err);
-    }
-  };
+  try {
+        const res = await fetch("http://localhost:8080/problems/admin/all", {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`
+          }
+        });
+        const data = await res.json();
+        setProblems(data);
+      } catch (err) {
+        console.error("Error fetching problems:", err);
+      }
+    };
+
 
   useEffect(() => {
     fetchProblems();
@@ -50,9 +55,13 @@ const AdminPanel = () => {
     setShowForm(true);
   };
 
-  const openEditForm = async (slug) => {
+const openEditForm = async (slug) => {
   try {
-    const res = await fetch(`http://localhost:8080/problems/${slug}`);
+    const res = await fetch(`http://localhost:8080/problems/${slug}`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`
+      }
+    });
     const data = await res.json();
 
     const filledForm = {
@@ -79,6 +88,7 @@ const AdminPanel = () => {
   }
 };
 
+
   const convertToBackendPayload = () => {
     const { sampleTestCasesJson } = form;
     const { input: sampleInput, expectedOutput: sampleOutput } = sampleTestCasesJson[0] || {};
@@ -94,33 +104,37 @@ const AdminPanel = () => {
     };
   };
 
-  const handleSubmit = async () => {
-    const method = isEditMode ? "PUT" : "POST";
-    const endpoint = isEditMode
-      ? `http://localhost:8080/problems/${form.slug}`
-      : "http://localhost:8080/problems/add-full";
+const handleSubmit = async () => {
+  const method = isEditMode ? "PUT" : "POST";
+  const endpoint = isEditMode
+    ? `http://localhost:8080/problems/${form.slug}`
+    : "http://localhost:8080/problems/add-full";
 
-    const payload = convertToBackendPayload();
+  const payload = convertToBackendPayload();
 
-    try {
-      const res = await fetch(endpoint, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+  try {
+    const res = await fetch(endpoint, {
+      method,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`
+      },
+      body: JSON.stringify(payload),
+    });
 
-      if (res.ok) {
-        toast.success(isEditMode ? "Problem updated" : "Problem added");
-        setShowForm(false);
-        fetchProblems();
-      } else {
-        toast.error("Server error");
-      }
-    } catch (err) {
-      console.error(err);
-      toast.error("Request failed");
+    if (res.ok) {
+      toast.success(isEditMode ? "Problem updated" : "Problem added");
+      setShowForm(false);
+      fetchProblems();
+    } else {
+      toast.error("Server error");
     }
-  };
+  } catch (err) {
+    console.error(err);
+    toast.error("Request failed");
+  }
+};
+
 
   return (
     <div className="min-h-screen bg-black text-white p-6">

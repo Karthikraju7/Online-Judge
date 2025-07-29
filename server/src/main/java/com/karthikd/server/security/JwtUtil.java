@@ -20,7 +20,7 @@ public class JwtUtil {
     @Value("${jwt.secret}")
     private String SECRET_KEY;
 
-    private final long TOKEN_VALIDITY = 30 * 60 * 1000; // 30 min
+    private final long TOKEN_VALIDITY = 24 * 60 * 60 * 1000; // 24 hours
 
     private SecretKey getSigningKey() {
         return Keys.hmacShaKeyFor(SECRET_KEY.getBytes(StandardCharsets.UTF_8));

@@ -1,8 +1,11 @@
 import React from "react";
 import { useAuth } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
+
 
 const Profile = () => {
   const { authUser, logout } = useAuth();
+  const navigate = useNavigate();
 
   if (!authUser) {
     return (
@@ -41,7 +44,10 @@ const Profile = () => {
 
           <div className="flex justify-between items-center">
             <span className="text-gray-400">Password</span>
-            <button className="text-blue-500 font-semibold hover:underline cursor-pointer">
+            <button
+              onClick={() => navigate("/change-password")}
+              className="text-blue-500 font-semibold hover:underline cursor-pointer"
+            >
               Change Password
             </button>
           </div>
@@ -61,6 +67,3 @@ const Profile = () => {
 };
 
 export default Profile;
-
-
-

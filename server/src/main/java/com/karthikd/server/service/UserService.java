@@ -12,4 +12,6 @@ public interface UserService {
 
     // --- New Method ---
     User verifyUser(String token);
+
+    void changePassword(String email, String currentPassword, String newPassword);
 }

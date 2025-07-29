@@ -100,6 +100,35 @@ public class AuthController {
         }
     }
 
+    @PostMapping("/change-password")
+    public ResponseEntity<?> changePassword(@RequestHeader("Authorization") String authHeader,
+                                            @RequestBody Map<String, String> request) {
+        try {
+            String token = authHeader.replace("Bearer ", "");
+            String email = jwtUtil.extractEmail(token);
+
+            String currentPassword = request.get("currentPassword");
+            String newPassword = request.get("newPassword");
+            String confirmPassword = request.get("confirmPassword");
+
+            if (!newPassword.equals(confirmPassword)) {
+                throw new RuntimeException("New password and confirm password do not match");
+            }
+
+            userService.changePassword(email, currentPassword, newPassword);
+
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "Password changed successfully");
+
+            return ResponseEntity.ok(response);
+
+        } catch (RuntimeException ex) {
+            return buildError(ex.getMessage(), 400);
+        }
+    }
+
+
+
     // Utility method to build error JSON response
     private ResponseEntity<?> buildError(String message, int statusCode) {
         Map<String, String> error = new HashMap<>();

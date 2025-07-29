@@ -29,8 +29,7 @@ public class WebSecurityConfig {
             "/login",
             "/admin-login",
             "/hello",
-            "/verify",
-            "/problems/**"
+            "/verify"
     };
 
     @Bean
