@@ -13,6 +13,8 @@ import { Toaster } from "react-hot-toast";
 import { useAuth } from "./context/AuthContext";
 import Verify from "./pages/Verify";
 import ChangePassword from "./pages/ChangePassword";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 
 const App = () => {
   const { authUser } = useAuth(); 
@@ -30,6 +32,8 @@ const App = () => {
           <Route path="/profile" element={<Profile />} />
           <Route path="/verify" element={<Verify />} />
           <Route path="/change-password" element={<ChangePassword />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route
             path="/admin"
             element={

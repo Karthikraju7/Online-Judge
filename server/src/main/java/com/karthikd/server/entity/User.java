@@ -34,4 +34,11 @@ public class User {
 
     @Column
     private LocalDateTime tokenExpiry;
+
+    @Column
+    private String resetToken;
+
+    @Column
+    private LocalDateTime resetTokenExpiry;
+
 }

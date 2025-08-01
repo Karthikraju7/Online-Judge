@@ -1,14 +1,10 @@
+server:
+  port: ${PORT}
+
 spring:
   application:
     name: server
 
-
----
-
-server:
-  port: 8080
-
-spring:
   datasource:
     url: ${SPRING_DATASOURCE_URL}
     username: ${SPRING_DATASOURCE_USERNAME}

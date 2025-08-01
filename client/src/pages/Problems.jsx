@@ -11,7 +11,7 @@ const Problems = () => {
   useEffect(() => {
     if (!authUser?.email) return;
 
-    authFetch(`http://localhost:8080/problems/all?email=${authUser.email}`)
+    authFetch(`${import.meta.env.VITE_API_URL}/problems/all?email=${authUser.email}`)
       .then((res) => {
         if (!res.ok) {
           throw new Error("Unauthorized or failed fetch");

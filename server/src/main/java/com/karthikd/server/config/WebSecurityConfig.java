@@ -28,9 +28,11 @@ public class WebSecurityConfig {
             "/register",
             "/login",
             "/admin-login",
-            "/hello",
-            "/verify"
+            "/verify",
+            "/forgot-password",
+            "reset-password"
     };
+
 
     @Bean
     public PasswordEncoder passwordEncoder() {

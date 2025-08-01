@@ -22,7 +22,7 @@ const AdminPanel = () => {
 
   const fetchProblems = async () => {
   try {
-        const res = await fetch("http://localhost:8080/problems/admin/all", {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/problems/admin/all`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`
           }
@@ -57,7 +57,7 @@ const AdminPanel = () => {
 
 const openEditForm = async (slug) => {
   try {
-    const res = await fetch(`http://localhost:8080/problems/${slug}`, {
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/problems/${slug}`, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem("token")}`
       }
@@ -107,8 +107,8 @@ const openEditForm = async (slug) => {
 const handleSubmit = async () => {
   const method = isEditMode ? "PUT" : "POST";
   const endpoint = isEditMode
-    ? `http://localhost:8080/problems/${form.slug}`
-    : "http://localhost:8080/problems/add-full";
+    ? `${import.meta.env.VITE_API_URL}/problems/${form.slug}`
+    : `${import.meta.env.VITE_API_URL}/problems/add-full`;
 
   const payload = convertToBackendPayload();
 

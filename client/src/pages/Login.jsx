@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { FiEye, FiEyeOff } from "react-icons/fi";
+import { useNavigate } from "react-router-dom";
 
 const Login = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -13,6 +14,7 @@ const Login = () => {
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const navigate = useNavigate();
 
   const { loginOrRegister } = useAuth();
 
@@ -133,6 +135,11 @@ const Login = () => {
           >
             {isLogin ? "Login" : "Register"}
           </button>
+          {isLogin && !isAdminMode && (
+            <div className="text-right text-sm text-blue-500 hover:underline cursor-pointer">
+              <span onClick={() => navigate("/forgot-password")}>Forgot Password?</span>
+            </div>
+          )}
         </form>
 
         {!isAdminMode && (

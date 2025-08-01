@@ -1,6 +1,5 @@
 package com.karthikd.server.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.karthikd.server.entity.Problem;
 import com.karthikd.server.entity.TestCase;
 import com.karthikd.server.entity.User;
@@ -54,18 +53,13 @@ public class CodeExecutionController {
                 default -> rawCode;
             };
 
-            System.out.println("🛠️ Run Request Received:");
-            System.out.println("Language: " + language);
-            System.out.println("Input: " + input);
-            System.out.println("Code:\n" + finalCode);
-
             String output = executionService.runCode(language, finalCode, input).trim();
 
-            // 🧠 Fetch expected output from DB
+            // Fetch expected output from DB
             Problem problem = problemRepository.findBySlug(slug);
             String expected = problem.getSampleOutput().trim();
 
-            // 🧪 Compare outputs
+            // Compare outputs
             String verdict = output.equals(expected) ? "✅ Correct" : "❌ Incorrect";
 
             return Map.of(
@@ -83,7 +77,7 @@ public class CodeExecutionController {
         String code = request.get("code");
         String language = request.get("language");
         String slug = request.get("slug");
-        String email = request.get("email"); // ✅ REQUIRED
+        String email = request.get("email");
 
         Problem problem = problemRepository.findBySlug(slug);
         if (problem == null) {
@@ -113,11 +107,6 @@ public class CodeExecutionController {
             wrappedInputs.add(input);
 
             String output = executionService.runCode(language, finalCode, input).trim();
-
-            // 🟡 Debug logs — ADD HERE
-            System.out.println("🔍 Hidden TestCase Input: " + input.replace("\n", "\\n"));
-            System.out.println("🧾 Actual Output: " + output);
-            System.out.println("🎯 Expected Output: " + test.getExpectedOutput().trim());
 
             if (output.equals(test.getExpectedOutput().trim())) {
                 passed++;

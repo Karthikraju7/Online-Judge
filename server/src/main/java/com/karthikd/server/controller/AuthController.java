@@ -1,5 +1,6 @@
 package com.karthikd.server.controller;
 
+import com.karthikd.server.dto.ResetPasswordRequest;
 import com.karthikd.server.entity.Role;
 import com.karthikd.server.entity.User;
 import com.karthikd.server.model.UserModel;
@@ -127,6 +128,32 @@ public class AuthController {
         }
     }
 
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(@RequestBody Map<String, String> request) {
+        try {
+            String email = request.get("email");
+            userService.initiatePasswordReset(email);
+
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "Password reset link sent to your email.");
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException ex) {
+            return buildError(ex.getMessage(), 400);
+        }
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@RequestParam String token, @RequestBody Map<String, String> request) {
+        try {
+            String newPassword = request.get("newPassword");
+            userService.resetPassword(token, newPassword);
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "Password reset successful");
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException ex) {
+            return buildError(ex.getMessage(), 400);
+        }
+    }
 
 
     // Utility method to build error JSON response

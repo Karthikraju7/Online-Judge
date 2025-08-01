@@ -66,7 +66,7 @@ export const AuthProvider = ({ children }) => {
       });
 
       const data = await res.json();
-      console.log(`${mode} response:`, data);
+      // console.log(`${mode} response:`, data);
 
       if (mode === "login" || mode === "admin-login") {
         if (res.ok) {

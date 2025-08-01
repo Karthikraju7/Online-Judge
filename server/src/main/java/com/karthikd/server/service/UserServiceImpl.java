@@ -1,5 +1,6 @@
 package com.karthikd.server.service;
 
+import com.karthikd.server.dto.ResetPasswordRequest;
 import com.karthikd.server.entity.Role;
 import com.karthikd.server.entity.User;
 import com.karthikd.server.model.UserModel;
@@ -9,6 +10,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Service
 public class UserServiceImpl implements UserService{
@@ -95,9 +97,6 @@ public class UserServiceImpl implements UserService{
         User user = userRepository.findByVerificationToken(token)
                 .orElseThrow(() -> new RuntimeException("Invalid verification token"));
 
-        System.out.println("DB Expiry: " + user.getTokenExpiry());
-        System.out.println("Now: " + LocalDateTime.now());
-
         // Check if token expired
         if (user.getTokenExpiry() != null && user.getTokenExpiry().isBefore(java.time.LocalDateTime.now())) {
             throw new RuntimeException("Verification token expired. Please register again.");
@@ -128,5 +127,39 @@ public class UserServiceImpl implements UserService{
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
     }
+
+    @Override
+    public void initiatePasswordReset(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("No user found with this email"));
+
+        user.setResetToken(UUID.randomUUID().toString());
+        user.setResetTokenExpiry(LocalDateTime.now().plusMinutes(15));
+        userRepository.save(user);
+
+        new Thread(() -> {
+            try {
+                emailService.sendPasswordResetEmail(user.getEmail(), user.getResetToken());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }).start();
+    }
+
+    @Override
+    public void resetPassword(String token, String newPassword) {
+        User user = userRepository.findByResetToken(token)
+                .orElseThrow(() -> new RuntimeException("Invalid or expired reset token"));
+
+        if (user.getResetTokenExpiry() == null || user.getResetTokenExpiry().isBefore(LocalDateTime.now())) {
+            throw new RuntimeException("Reset token has expired");
+        }
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        user.setResetToken(null);
+        user.setResetTokenExpiry(null);
+        userRepository.save(user);
+    }
+
 
 }

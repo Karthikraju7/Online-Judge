@@ -40,7 +40,7 @@ print("Hello World")`
   useEffect(() => {
     const fetchProblem = async () => {
       try {
-        const res = await authFetch(`http://localhost:8080/problems/${slug}`); // ✅ JWT included
+        const res = await authFetch(`${import.meta.env.VITE_API_URL}/problems/${slug}`); // ✅ JWT included
         const data = await res.json();
         setProblem(data);
 
@@ -66,7 +66,7 @@ print("Hello World")`
   const handleRun = async () => {
     setIsLoading(true);
     try {
-      const res = await authFetch("http://localhost:8080/problems/run", {  // ✅ JWT
+      const res = await authFetch(`${import.meta.env.VITE_API_URL}/problems/run`, {  // ✅ JWT
         method: "POST",
         body: JSON.stringify({
           language: selectedLang,
@@ -95,7 +95,7 @@ print("Hello World")`
   const handleSubmit = async () => {
     setIsLoading(true);
     try {
-      const res = await authFetch("http://localhost:8080/problems/submit", { // ✅ JWT
+      const res = await authFetch(`${import.meta.env.VITE_API_URL}/problems/submit`, { // ✅ JWT
         method: "POST",
         body: JSON.stringify({
           language: selectedLang,

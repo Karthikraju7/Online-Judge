@@ -39,4 +39,30 @@ public class EmailService {
             throw new RuntimeException("Failed to send verification email", e);
         }
     }
+
+    public void sendPasswordResetEmail(String toEmail, String token) {
+        String subject = "Reset Your Password";
+        String resetLink = "http://localhost:5173/reset-password?token=" + token;
+
+        String body = "<div style='font-family: Arial, sans-serif; color: #333; padding: 20px;'>"
+                + "<h2>Reset Your Password</h2>"
+                + "<p>Click the button below to reset your password:</p>"
+                + "<a href='" + resetLink + "' "
+                + "style='display: inline-block; padding: 10px 20px; background-color: #28a745; "
+                + "color: #fff; text-decoration: none; border-radius: 5px;'>Reset Password</a>"
+                + "<p style='margin-top: 20px;'>Note: This link will expire in 15 minutes.</p>"
+                + "</div>";
+
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true);
+            helper.setTo(toEmail);
+            helper.setSubject(subject);
+            helper.setText(body, true); // HTML content enabled
+            mailSender.send(message);
+        } catch (MessagingException e) {
+            throw new RuntimeException("Failed to send password reset email", e);
+        }
+    }
+
 }

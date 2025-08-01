@@ -1,11 +1,14 @@
 package com.karthikd.server.util;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.UUID;
 
+@Slf4j
 public class CppExecutor {
 
     public static String runCpp(Path codePath, Path inputPath) throws Exception {
@@ -32,7 +35,7 @@ public class CppExecutor {
             while ((line = errorReader.readLine()) != null) {
                 error.append(line).append("\n");
             }
-            System.out.println("❌ Compilation Failed:\n" + error);
+            log.error("Compilation failed:\n{}", error);
             throw new RuntimeException("Compilation Error:\n" + error);
         }
 

@@ -1,5 +1,6 @@
 package com.karthikd.server.service;
 
+import com.karthikd.server.dto.ResetPasswordRequest;
 import com.karthikd.server.entity.User;
 import com.karthikd.server.model.UserModel;
 
@@ -10,8 +11,12 @@ public interface UserService {
 
     User loginAndFetchAdmin(String email, String password);
 
-    // --- New Method ---
     User verifyUser(String token);
 
     void changePassword(String email, String currentPassword, String newPassword);
+
+    void initiatePasswordReset(String email);
+
+    void resetPassword(String token, String newPassword);
+
 }

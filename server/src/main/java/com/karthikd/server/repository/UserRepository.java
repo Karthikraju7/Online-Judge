@@ -12,8 +12,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     Optional<User> findByEmail(String email);
 
-    // --- New Method for Email Verification ---
     Optional<User> findByVerificationToken(String token);
 
-    void deleteByVerifiedFalseAndTokenExpiryBefore(LocalDateTime expiryDate);
+    Optional<User> findByResetToken(String resetToken);
 }

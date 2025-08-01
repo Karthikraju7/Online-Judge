@@ -22,9 +22,6 @@ public class ProblemController {
     private ProblemService problemService;
 
     @Autowired
-    private RestTemplate restTemplate;
-
-    @Autowired
     private ProblemRepository problemRepository;
 
 
