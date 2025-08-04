@@ -1,17 +1,14 @@
 import React, { useState, useEffect } from "react";
 import toast from "react-hot-toast";
+import { useAuth } from "../context/AuthContext";
 
 const initialForm = {
   title: "",
   slug: "",
   difficulty: "Easy",
   description: "",
-  sampleTestCasesJson: [
-    { input: "", expectedOutput: "" }
-  ],
-  hiddenTestCases: [
-    { input: "", expectedOutput: "" }
-  ]
+  sampleTestCasesJson: [{ input: "", expectedOutput: "" }],
+  hiddenTestCases: []
 };
 
 const AdminPanel = () => {
@@ -19,28 +16,25 @@ const AdminPanel = () => {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(initialForm);
   const [isEditMode, setIsEditMode] = useState(false);
-
-  const fetchProblems = async () => {
-  try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/problems/admin/all`, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`
-          }
-        });
-        const data = await res.json();
-        setProblems(data);
-      } catch (err) {
-        console.error("Error fetching problems:", err);
-      }
-    };
-
+  const [jsonInput, setJsonInput] = useState("");
+  const { authFetch } = useAuth();
 
   useEffect(() => {
     fetchProblems();
   }, []);
 
+  const fetchProblems = async () => {
+    try {
+      const res = await authFetch(`${import.meta.env.VITE_API_URL}/problems/admin/all`);
+      const data = await res.json();
+      setProblems(data);
+    } catch (err) {
+      console.error("Error fetching problems:", err);
+    }
+  };
+
   const handleChange = (e, field, index = null) => {
-    if (field === "sampleTestCasesJson" || field === "hiddenTestCases") {
+    if (field === "sampleTestCasesJson") {
       const updated = [...form[field]];
       updated[index][e.target.name] = e.target.value;
       setForm({ ...form, [field]: updated });
@@ -51,90 +45,87 @@ const AdminPanel = () => {
 
   const openAddForm = () => {
     setForm(initialForm);
+    setJsonInput("");
     setIsEditMode(false);
     setShowForm(true);
   };
 
-const openEditForm = async (slug) => {
-  try {
-    const res = await fetch(`${import.meta.env.VITE_API_URL}/problems/${slug}`, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`
-      }
-    });
-    const data = await res.json();
+  const openEditForm = async (slug) => {
+    try {
+      const res = await authFetch(`${import.meta.env.VITE_API_URL}/problems/${slug}`);
+      const data = await res.json();
 
-    const filledForm = {
-      title: data.title || "",
-      slug: data.slug || "",
-      difficulty: data.difficulty || "Easy",
-      description: data.description || "",
-      sampleTestCasesJson: [
-        {
-          input: data.sampleInput || "",
-          expectedOutput: data.sampleOutput || ""
-        }
-      ],
-      hiddenTestCases: Array.isArray(data.hiddenTestCases)
-        ? data.hiddenTestCases
-        : []
-    };
+      const hiddenRes = await authFetch(`${import.meta.env.VITE_API_URL}/problems/${slug}/hidden`);
+      const hidden = await hiddenRes.json();
 
-    setForm(filledForm);
-    setIsEditMode(true);
-    setShowForm(true);
-  } catch (err) {
-    toast.error("Error loading problem.");
-  }
-};
+      const filledForm = {
+        title: data.title || "",
+        slug: data.slug || "",
+        difficulty: data.difficulty || "Easy",
+        description: data.description || "",
+        sampleTestCasesJson: [
+          {
+            input: data.sampleInput || "",
+            expectedOutput: data.sampleOutput || ""
+          }
+        ],
+        hiddenTestCases: Array.isArray(hidden) ? hidden : []
+      };
 
-
-  const convertToBackendPayload = () => {
-    const { sampleTestCasesJson } = form;
-    const { input: sampleInput, expectedOutput: sampleOutput } = sampleTestCasesJson[0] || {};
-
-    return {
-      title: form.title,
-      slug: form.slug,
-      difficulty: form.difficulty,
-      description: form.description,
-      sampleInput,
-      sampleOutput,
-      hiddenTestCases: form.hiddenTestCases
-    };
+      setForm(filledForm);
+      setJsonInput(JSON.stringify(filledForm.hiddenTestCases, null, 2));
+      setIsEditMode(true);
+      setShowForm(true);
+    } catch (err) {
+      toast.error("Error loading problem.");
+    }
   };
 
-const handleSubmit = async () => {
-  const method = isEditMode ? "PUT" : "POST";
-  const endpoint = isEditMode
-    ? `${import.meta.env.VITE_API_URL}/problems/${form.slug}`
-    : `${import.meta.env.VITE_API_URL}/problems/add-full`;
+  const convertToBackendPayload = () => {
+  const { sampleTestCasesJson } = form;
+  const { input: sampleInput, expectedOutput: sampleOutput } = sampleTestCasesJson[0] || {};
 
-  const payload = convertToBackendPayload();
-
-  try {
-    const res = await fetch(endpoint, {
-      method,
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("token")}`
-      },
-      body: JSON.stringify(payload),
-    });
-
-    if (res.ok) {
-      toast.success(isEditMode ? "Problem updated" : "Problem added");
-      setShowForm(false);
-      fetchProblems();
-    } else {
-      toast.error("Server error");
-    }
-  } catch (err) {
-    console.error(err);
-    toast.error("Request failed");
-  }
+  return {
+    title: form.title,
+    slug: form.slug,
+    difficulty: form.difficulty,
+    description: form.description,
+    sampleInput,
+    sampleOutput,
+    hiddenTestCases: form.hiddenTestCases
+  };
 };
 
+
+  const handleSubmit = async () => {
+    const method = isEditMode ? "PUT" : "POST";
+    const endpoint = isEditMode
+      ? `${import.meta.env.VITE_API_URL}/problems/${form.slug}`
+      : `${import.meta.env.VITE_API_URL}/problems/add-full`;
+
+    const payload = convertToBackendPayload();
+
+    console.log("🚀 Submitting payload:", payload);
+
+    try {
+      const res = await authFetch(endpoint, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (res.ok) {
+        toast.success(isEditMode ? "Problem updated" : "Problem added");
+        setShowForm(false);
+        fetchProblems();
+      } else {
+        toast.error("Server error");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Request failed");
+    }
+  };
 
   return (
     <div className="min-h-screen bg-black text-white p-6">
@@ -155,11 +146,21 @@ const handleSubmit = async () => {
       {problems.map((p, i) => (
         <div
           key={i}
-          className="grid grid-cols-4 gap-4 text-sm py-2 border-b border-gray-800"
+          className="grid grid-cols-4 gap-4 text-sm py-2 border-b border-gray-800 hover:bg-gray-800/50 transition"
         >
-          <div>{p.title}</div>
-          <div>{p.slug}</div>
-          <div>{p.difficulty}</div>
+          <div className="text-cyan-400 font-medium">{p.title}</div>
+          <div className="text-gray-400">{p.slug}</div>
+          <div className={
+            `font-semibold ${
+              p.difficulty === "Easy"
+                ? "text-green-400"
+                : p.difficulty === "Medium"
+                ? "text-yellow-400"
+                : "text-red-400"
+            }`
+          }>
+            {p.difficulty}
+          </div>
           <div>
             <button
               className="text-blue-400 hover:underline cursor-pointer"
@@ -174,9 +175,7 @@ const handleSubmit = async () => {
       {showForm && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
           <div className="bg-gray-900 p-6 rounded w-[700px] max-h-[90vh] overflow-y-auto">
-            <h2 className="text-xl font-bold mb-4">
-              {isEditMode ? "Edit Problem" : "Add Problem"}
-            </h2>
+            <h2 className="text-xl font-bold mb-4">{isEditMode ? "Edit Problem" : "Add Problem"}</h2>
 
             <div className="space-y-3">
               <input
@@ -233,37 +232,32 @@ const handleSubmit = async () => {
                 ))}
               </div>
 
-              {/* ✅ Hidden Test Cases */}
+              {/* ✅ JSON-only Hidden Test Cases */}
               <div>
-                <h4 className="font-bold mb-2">Hidden Test Cases</h4>
-                {form.hiddenTestCases.map((test, idx) => (
-                  <div key={idx} className="mb-2">
-                    <input
-                      name="input"
-                      value={test.input}
-                      placeholder="Hidden Input"
-                      onChange={(e) => handleChange(e, "hiddenTestCases", idx)}
-                      className="w-full p-2 bg-gray-700 rounded mb-1"
-                    />
-                    <input
-                      name="expectedOutput"
-                      value={test.expectedOutput}
-                      placeholder="Hidden Expected Output"
-                      onChange={(e) => handleChange(e, "hiddenTestCases", idx)}
-                      className="w-full p-2 bg-gray-700 rounded"
-                    />
-                  </div>
-                ))}
+                <h4 className="font-bold mb-2">Hidden Test Cases (JSON only)</h4>
+                <textarea
+                  value={jsonInput}
+                  onChange={(e) => setJsonInput(e.target.value)}
+                  placeholder={`Paste JSON like:\n[\n  { "input": "1\\n2", "expectedOutput": "3" }\n]`}
+                  className="w-full p-2 bg-gray-800 rounded h-40 text-sm font-mono"
+                />
                 <button
-                  onClick={() =>
-                    setForm({
-                      ...form,
-                      hiddenTestCases: [...form.hiddenTestCases, { input: "", expectedOutput: "" }]
-                    })
-                  }
-                  className="text-green-400 mt-1 text-sm cursor-pointer"
+                  onClick={() => {
+                    try {
+                      const parsed = JSON.parse(jsonInput);
+                      if (!Array.isArray(parsed)) throw new Error("Not an array");
+                      if (!parsed.every(tc => "input" in tc && "expectedOutput" in tc))
+                        throw new Error("Each item must have input & expectedOutput");
+
+                      setForm({ ...form, hiddenTestCases: parsed });
+                      toast.success("Test cases parsed successfully");
+                    } catch (err) {
+                      toast.error("Invalid JSON: " + err.message);
+                    }
+                  }}
+                  className="text-blue-400 mt-2 text-sm cursor-pointer"
                 >
-                  + Add Hidden Test Case
+                  ✅ Apply JSON
                 </button>
               </div>
             </div>
