@@ -1,6 +1,7 @@
 package com.karthikd.server.service;
 
 import com.karthikd.server.dto.AddProblemRequest;
+import com.karthikd.server.dto.HiddenTestCaseDTO;
 import com.karthikd.server.dto.ProblemSummaryDTO;
 import com.karthikd.server.entity.Problem;
 import com.karthikd.server.entity.TestCase;
@@ -13,7 +14,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import jakarta.transaction.Transactional;
 
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class ProblemServiceImpl implements ProblemService{
@@ -102,25 +104,41 @@ public class ProblemServiceImpl implements ProblemService{
             throw new RuntimeException("Problem not found with slug: " + slug);
         }
 
-        // Update fields
+        // Update main fields
         existing.setTitle(request.getTitle());
         existing.setDescription(request.getDescription());
         existing.setDifficulty(request.getDifficulty());
         existing.setSampleInput(request.getSampleInput());
         existing.setSampleOutput(request.getSampleOutput());
 
-        // Clear old test cases
-        existing.getHiddenTestCases().clear();
+        // Map existing test cases by ID
+        Map<Long, TestCase> existingMap = existing.getHiddenTestCases().stream()
+                .filter(tc -> tc.getId() != null)
+                .collect(Collectors.toMap(TestCase::getId, tc -> tc));
 
-        // Add new test cases
-        List<TestCase> updatedCases = request.getHiddenTestCases().stream()
-                .map(tc -> new TestCase(null, tc.getInput(), tc.getExpectedOutput()))
-                .toList();
+        Set<Long> incomingIds = new HashSet<>();
 
-        existing.getHiddenTestCases().addAll(updatedCases);
+        for (HiddenTestCaseDTO dto : request.getHiddenTestCases()) {
+            if (dto.getId() != null && existingMap.containsKey(dto.getId())) {
+                // Update existing
+                TestCase tc = existingMap.get(dto.getId());
+                tc.setInput(dto.getInput());
+                tc.setExpectedOutput(dto.getExpectedOutput());
+                incomingIds.add(dto.getId());
+            } else {
+                // Add new
+                TestCase newTc = new TestCase();
+                newTc.setInput(dto.getInput());
+                newTc.setExpectedOutput(dto.getExpectedOutput());
+                existing.getHiddenTestCases().add(newTc);
+            }
+        }
+
+        existing.getHiddenTestCases().removeIf(tc ->
+                tc.getId() != null && !incomingIds.contains(tc.getId())
+        );
 
         problemRepository.save(existing);
-
         return "Problem updated successfully";
     }
 }
