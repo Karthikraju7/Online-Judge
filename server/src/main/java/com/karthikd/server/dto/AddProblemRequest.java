@@ -1,17 +1,17 @@
-package com.karthikd.server.dto;
+    package com.karthikd.server.dto;
 
-import lombok.Data;
+    import lombok.Data;
 
-import java.util.List;
+    import java.util.List;
 
-@Data
-public class AddProblemRequest {
-    private String title;
-    private String slug;
-    private String description;
-    private String difficulty; // "Easy", "Medium", "Hard"
-    private String sampleInput;
-    private String sampleOutput;
+    @Data
+    public class AddProblemRequest {
+        private String title;
+        private String slug;
+        private String description;
+        private String difficulty; // "Easy", "Medium", "Hard"
+        private String sampleInput;
+        private String sampleOutput;
 
-    private List<HiddenTestCaseDTO> hiddenTestCases;
-}
+        private List<HiddenTestCaseDTO> hiddenTestCases;
+    }

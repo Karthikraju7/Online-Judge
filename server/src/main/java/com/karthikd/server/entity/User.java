@@ -25,7 +25,6 @@ public class User {
     @Column(nullable = false)
     private Role role;
 
-    // --- New Fields for Email Verification ---
     @Column(nullable = false)
     private boolean verified = false;
 

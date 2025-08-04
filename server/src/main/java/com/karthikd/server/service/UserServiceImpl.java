@@ -1,6 +1,5 @@
 package com.karthikd.server.service;
 
-import com.karthikd.server.dto.ResetPasswordRequest;
 import com.karthikd.server.entity.Role;
 import com.karthikd.server.entity.User;
 import com.karthikd.server.model.UserModel;

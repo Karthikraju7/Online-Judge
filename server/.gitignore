@@ -34,3 +34,10 @@ build/
 
 ### Environment Files ###
 .env
+
+### codes ###
+
+codes/
+inputs/
+outputs/
+

@@ -25,10 +25,10 @@ public class ProblemController {
     private ProblemRepository problemRepository;
 
 
-    @PostMapping("/add")
-    public ResponseEntity<?> addProblem(@RequestBody AddProblemRequest request) {
-        return ResponseEntity.ok(problemService.addProblem(request));
-    }
+//    @PostMapping("/add")
+//    public ResponseEntity<?> addProblem(@RequestBody AddProblemRequest request) {
+//        return ResponseEntity.ok(problemService.addProblem(request));
+//    }
 
     @PostMapping("/add-full")
     public ResponseEntity<?> addProblemWithTestCases(@RequestBody AddProblemRequest request) {
@@ -53,8 +53,6 @@ public class ProblemController {
         return ResponseEntity.ok(problems);
     }
 
-
-
     @GetMapping("/{slug}")
     public ResponseEntity<?> getProblemBySlug(@PathVariable String slug) {
         Problem problem = problemService.getBySlug(slug);
@@ -73,8 +71,8 @@ public class ProblemController {
 
     @PutMapping("/{slug}")
     public ResponseEntity<?> updateProblem(@PathVariable String slug, @RequestBody AddProblemRequest request) {
+        System.out.println("🔍 Incoming hiddenTestCases: " + request.getHiddenTestCases());
         return ResponseEntity.ok(problemService.updateProblem(slug, request));
     }
-
 
 }

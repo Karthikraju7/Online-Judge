@@ -29,7 +29,7 @@ public class Problem {
     @Column(columnDefinition = "TEXT")
     private String sampleOutput;
 
-    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
     @JoinColumn(name = "problem_id")
     private List<TestCase> hiddenTestCases;
 
