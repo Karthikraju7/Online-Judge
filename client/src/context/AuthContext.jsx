@@ -13,7 +13,6 @@ export const AuthProvider = ({ children }) => {
   const navigate = useNavigate();
   const logoutTimer = useRef(null);
 
-  // Helper to decode JWT token
   const decodeToken = (token) => {
     try {
       const payload = JSON.parse(atob(token.split(".")[1]));
@@ -23,12 +22,11 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Set Auto Logout Timer
   const setAutoLogout = (token) => {
     const decoded = decodeToken(token);
     if (!decoded || !decoded.exp) return;
 
-    const expiryTime = decoded.exp * 1000 - Date.now(); // ms
+    const expiryTime = decoded.exp * 1000 - Date.now();
     if (expiryTime <= 0) {
       logout();
     } else {
@@ -39,9 +37,9 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Run when authUser changes (or on reload)
   useEffect(() => {
     if (authUser?.token) {
+      console.log("🔐 Token present, setting auto logout timer...");
       setAutoLogout(authUser.token);
     }
     return () => clearTimeout(logoutTimer.current);
@@ -66,7 +64,7 @@ export const AuthProvider = ({ children }) => {
       });
 
       const data = await res.json();
-      // console.log(`${mode} response:`, data);
+      console.log(`${mode} response:`, data);
 
       if (mode === "login" || mode === "admin-login") {
         if (res.ok) {
@@ -74,7 +72,7 @@ export const AuthProvider = ({ children }) => {
             email: data.email,
             username: data.username,
             role: data.role,
-            token: data.token, // Store JWT token
+            token: data.token,
           };
 
           setAuthUser(user);
@@ -99,7 +97,7 @@ export const AuthProvider = ({ children }) => {
         }
       }
     } catch (err) {
-      console.error(err);
+      console.error("❌ loginOrRegister error:", err);
       toast.error("Something went wrong!");
     }
   };
@@ -112,17 +110,34 @@ export const AuthProvider = ({ children }) => {
     navigate("/");
   };
 
-  // Fetch helper that attaches JWT automatically
   const authFetch = async (url, options = {}) => {
     const token = authUser?.token;
+    if (!token) console.warn("⚠️ No token found in authUser");
+
     const headers = {
-      ...options.headers,
-      Authorization: token ? `Bearer ${token}` : "",
-      ...(options.method !== "GET"
+      ...(options.headers || {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(options.method && options.method !== "GET"
         ? { "Content-Type": "application/json" }
         : {}),
     };
-    return fetch(url, { ...options, headers });
+
+    console.log("📤 authFetch URL:", url);
+    console.log("🔐 Token:", token);
+    console.log("📦 Headers:", headers);
+    console.log("🧾 Body:", options.body);
+
+    try {
+      const res = await fetch(url, {
+        ...options,
+        headers,
+        credentials: "include", // IMPORTANT for some CORS issues
+      });
+      return res;
+    } catch (err) {
+      console.error("❌ authFetch failed:", err);
+      throw err;
+    }
   };
 
   return (
