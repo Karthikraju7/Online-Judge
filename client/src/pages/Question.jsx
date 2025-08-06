@@ -98,8 +98,22 @@ print("Hello World")`
 
       // Save to backend
       authFetch(`${import.meta.env.VITE_API_URL}/code/save`, {
-        method: "POST",
-        body: JSON.stringify({ slug, language: selectedLang, code }),
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json", // 🛠️ ADD THIS
+      },
+      body: JSON.stringify({
+        slug,
+        language: selectedLang,
+        code: code.replace(/\r\n/g, "\n"),
+      }),
+
+    }).then(res => {
+        if (!res.ok) {
+          console.error('Failed to save code', res.status);
+        }
+      }).catch(err => {
+        console.error('Error saving code:', err);
       });
     }, 3000);
 
@@ -113,8 +127,16 @@ print("Hello World")`
     // Save to backend before run
     await authFetch(`${import.meta.env.VITE_API_URL}/code/save`, {
       method: "POST",
-      body: JSON.stringify({ slug, language: selectedLang, code }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        slug,
+        language: selectedLang,
+        code: code.replace(/\r\n/g, "\n"),
+      }),
     });
+
 
     setIsLoading(true);
     try {
@@ -139,8 +161,16 @@ print("Hello World")`
     // Save before submit
     await authFetch(`${import.meta.env.VITE_API_URL}/code/save`, {
       method: "POST",
-      body: JSON.stringify({ slug, language: selectedLang, code }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        slug,
+        language: selectedLang,
+        code: code.replace(/\r\n/g, "\n"),
+      }),
     });
+
 
     setIsLoading(true);
     try {
@@ -176,12 +206,16 @@ print("Hello World")`
     // Save reset to backend
     authFetch(`${import.meta.env.VITE_API_URL}/code/save`, {
       method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify({
         slug,
         language: selectedLang,
-        code: defaultTemplates[selectedLang],
+        code: defaultTemplates[selectedLang].replace(/\r\n/g, "\n"),
       }),
     });
+
 
     setOutput("🗑️ Code reset to default.");
     setIsResetModalOpen(false);
