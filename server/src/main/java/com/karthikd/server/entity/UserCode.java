@@ -23,6 +23,6 @@ public class UserCode {
     private String language;
 
     @Lob
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String code;
 }

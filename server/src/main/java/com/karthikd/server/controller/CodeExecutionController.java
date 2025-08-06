@@ -21,6 +21,8 @@ import static com.karthikd.server.util.JavaWrapper.wrapJavaCode;
 import static com.karthikd.server.util.JavaWrapper.wrapJavaCodeInput;
 import static com.karthikd.server.util.PythonWrapper.wrapPythonCode;
 import static com.karthikd.server.util.PythonWrapper.wrapPythonCodeInput;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 
 @RestController
 @RequestMapping("/problems")
@@ -37,7 +39,6 @@ public class CodeExecutionController {
     @Autowired
     private UserProblemRepository userProblemRepository;
 
-
     @PostMapping("/run")
     public Map<String, String> runCode(@RequestBody Map<String, String> request) {
         try {
@@ -53,19 +54,15 @@ public class CodeExecutionController {
                 default -> rawCode;
             };
 
-            String output = executionService.runCode(language, finalCode, input).trim();
+            String identifier = "temp_user_" + slug + "_" + language;
+            String output = executionService.runCode(language, finalCode, input, identifier).trim();
 
-            // Fetch expected output from DB
             Problem problem = problemRepository.findBySlug(slug);
             String expected = problem.getSampleOutput().trim();
 
-            // Compare outputs
             String verdict = output.equals(expected) ? "✅ Correct" : "❌ Incorrect";
 
-            return Map.of(
-                    "output", output,
-                    "verdict", verdict
-            );
+            return Map.of("output", output, "verdict", verdict);
         } catch (Exception e) {
             e.printStackTrace();
             return Map.of("output", "❌ Server error: " + e.getMessage());
@@ -80,9 +77,7 @@ public class CodeExecutionController {
         String email = request.get("email");
 
         Problem problem = problemRepository.findBySlug(slug);
-        if (problem == null) {
-            return Map.of("verdict", "❌ Problem not found");
-        }
+        if (problem == null) return Map.of("verdict", "❌ Problem not found");
 
         int passed = 0;
         int total = problem.getHiddenTestCases().size();
@@ -94,6 +89,7 @@ public class CodeExecutionController {
             default -> code;
         };
 
+        String identifier = email + "_" + slug + "_" + language;
         List<String> wrappedInputs = new ArrayList<>();
 
         for (TestCase test : problem.getHiddenTestCases()) {
@@ -105,16 +101,10 @@ public class CodeExecutionController {
             };
 
             wrappedInputs.add(input);
+            String output = executionService.runCode(language, finalCode, input, identifier).trim();
 
-            String output = executionService.runCode(language, finalCode, input).trim();
-
-            if (output.equals(test.getExpectedOutput().trim())) {
-                passed++;
-            } else {
-                break;
-            }
+            if (output.equals(test.getExpectedOutput().trim())) passed++;
         }
-
 
         if (passed == total) {
             User user = userRepository.findByEmail(email).orElseThrow();
@@ -126,10 +116,9 @@ public class CodeExecutionController {
                 ? "✅ Accepted"
                 : "❌ " + passed + "/" + total + " test cases passed";
 
-        return Map.of(
-                "verdict", verdict
-        );
+        return Map.of("verdict", verdict);
     }
+
 
 }
 

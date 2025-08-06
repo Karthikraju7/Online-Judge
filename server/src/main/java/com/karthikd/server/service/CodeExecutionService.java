@@ -11,16 +11,16 @@ import java.nio.file.Path;
 @Service
 public class CodeExecutionService {
 
-    public String runCode(String language, String code, String input) throws Exception {
-        System.out.println("👉 Service Called with Language: " + language);
+    public String runCode(String language, String code, String input, String identifier) throws Exception {
+        System.out.println("👉 Service Called with Language: " + language + ", Identifier: " + identifier);
         return switch (language.toLowerCase()) {
             case "cpp" -> {
-                Path codePath = FileUtil.writeCodeToFile(code, "cpp");
-                Path inputPath = FileUtil.writeInputToFile(input);
+                Path codePath = FileUtil.writeCodeToFile(code, "cpp", identifier);
+                Path inputPath = FileUtil.writeInputToFile(input, identifier);
                 yield CppExecutor.runCpp(codePath, inputPath);
             }
-            case "python" -> PythonExecutor.runPython(code, input);
-            case "java" -> JavaExecutor.runJava(code, input);
+            case "python" -> PythonExecutor.runPython(code, input, identifier);
+            case "java" -> JavaExecutor.runJava(code, input, identifier);
             default -> throw new IllegalArgumentException("Unsupported language: " + language);
         };
     }

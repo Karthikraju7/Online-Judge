@@ -5,46 +5,32 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 public class JavaExecutor {
-
-    public static String runJava(String code, String input) throws IOException, InterruptedException {
-        String className = "Main";
-        Path javaFilePath = FileUtil.writeCodeToFile(code, "java", className);
-        Path inputFilePath = FileUtil.writeInputToFile(input);
+    public static String runJava(String code, String input, String identifier) throws IOException, InterruptedException {
+        String className = identifier; // Since we save as ClassName.java
+        Path codeFilePath = FileUtil.writeCodeToFile(code, "java", className);
+        Path inputFilePath = FileUtil.writeInputToFile(input, identifier);
 
         // Compile
-        Process compileProcess = new ProcessBuilder(
-                "javac",
-                javaFilePath.toString()
-        ).start();
+        Process compileProcess = new ProcessBuilder("javac", codeFilePath.toString()).start();
+        compileProcess.waitFor();
 
-        int compileExit = compileProcess.waitFor();
-        if (compileExit != 0) {
-            String error = new String(compileProcess.getErrorStream().readAllBytes());
-            return "❌ Compilation Error:\n" + error;
+        if (compileProcess.exitValue() != 0) {
+            return "Compilation failed for Java.";
         }
 
         // Run
-        Process runProcess = new ProcessBuilder(
-                "java",
-                "-cp", "codes",  // compiled .class is in codes folder
-                className
-        ).redirectInput(inputFilePath.toFile())
-                .redirectErrorStream(true)
-                .start();
+        ProcessBuilder pb = new ProcessBuilder("java", "-cp", "codes", className);
+        pb.redirectInput(inputFilePath.toFile());
+        pb.redirectErrorStream(true);
 
-        BufferedReader reader = new BufferedReader(new InputStreamReader(runProcess.getInputStream()));
+        Process process = pb.start();
+        BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
         StringBuilder output = new StringBuilder();
         String line;
+        while ((line = reader.readLine()) != null) output.append(line).append("\n");
 
-        while ((line = reader.readLine()) != null) {
-            output.append(line).append("\n");
-        }
-
-        int runExit = runProcess.waitFor();
-        if (runExit != 0) {
-            return "❌ Runtime Error during Java execution.";
-        }
-
+        process.waitFor();
         return output.toString().trim();
     }
+
 }

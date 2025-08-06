@@ -6,11 +6,11 @@ import java.nio.file.Path;
 
 public class PythonExecutor {
 
-    public static String runPython(String code, String input) throws IOException, InterruptedException {
-        Path codeFilePath = FileUtil.writeCodeToFile(code, "py");
-        Path inputFilePath = FileUtil.writeInputToFile(input);
+    public static String runPython(String code, String input, String identifier) throws IOException, InterruptedException {
+        Path codeFilePath = FileUtil.writeCodeToFile(code, "py", identifier);
+        Path inputFilePath = FileUtil.writeInputToFile(input, identifier);
 
-        String[] command = { "python", codeFilePath.toString() };
+        String[] command = {"python", codeFilePath.toString()};
 
         ProcessBuilder processBuilder = new ProcessBuilder(command);
         processBuilder.redirectInput(inputFilePath.toFile());
@@ -26,11 +26,11 @@ public class PythonExecutor {
         }
 
         int exitCode = process.waitFor();
-
         if (exitCode != 0) {
             return "Error during Python execution.\n" + output.toString();
         }
 
         return output.toString().trim();
     }
+
 }

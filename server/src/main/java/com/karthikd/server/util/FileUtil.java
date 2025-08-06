@@ -3,6 +3,7 @@ package com.karthikd.server.util;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.UUID;
@@ -17,31 +18,19 @@ public class FileUtil {
         new File(INPUT_DIR).mkdirs();
     }
 
-    // For cpp and py
-    public static Path writeCodeToFile(String code, String extension) throws IOException {
-        String fileName = UUID.randomUUID().toString();
-        String filePath = CODE_DIR + "/" + fileName + "." + extension;
-        try (FileWriter writer = new FileWriter(filePath)) {
+    public static Path writeCodeToFile(String code, String extension, String identifier) throws IOException {
+        String filePath = CODE_DIR + "/" + identifier + "." + extension;
+        try (FileWriter writer = new FileWriter(filePath, false)) { // overwrite
             writer.write(code);
         }
         return Paths.get(filePath);
     }
 
-    //For Java
-    public static Path writeCodeToFile(String code, String extension, String className) throws IOException {
-        String filePath = CODE_DIR + "/" + className + "." + extension;
-        try (FileWriter writer = new FileWriter(filePath)) {
-            writer.write(code);
-        }
-        return Paths.get(filePath);
+    public static Path writeInputToFile(String input, String identifier) throws IOException {
+        Path inputPath = Paths.get("inputs", "input_" + identifier + ".txt");
+        Files.writeString(inputPath, input);
+        return inputPath;
     }
 
-    public static Path writeInputToFile(String input) throws IOException {
-        String fileName = UUID.randomUUID().toString();
-        String filePath = INPUT_DIR + "/" + fileName + ".txt";
-        try (FileWriter writer = new FileWriter(filePath)) {
-            writer.write(input);
-        }
-        return Paths.get(filePath);
-    }
 }
+
