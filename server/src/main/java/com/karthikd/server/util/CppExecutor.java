@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.io.*;
 import java.nio.file.Path;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 public class CppExecutor {
@@ -12,15 +13,11 @@ public class CppExecutor {
         String codeFileName = codePath.getFileName().toString();
         String exeFileName = codeFileName.replace(".cpp", "");
 
-        // Detect OS
         boolean isWindows = System.getProperty("os.name").toLowerCase().contains("win");
         String exeFileNameWithExt = isWindows ? exeFileName + ".exe" : exeFileName;
         File exeFile = new File("codes", exeFileNameWithExt);
         String exeAbsolutePath = exeFile.getAbsolutePath();
 
-        log.info("🔧 Compiling C++ file: {}", codeFileName);
-
-        // Compile the C++ file
         Process compileProcess = new ProcessBuilder(
                 "g++", "-std=c++17", codePath.toString(), "-o", exeAbsolutePath
         ).start();
@@ -34,34 +31,46 @@ public class CppExecutor {
 
         int compileResult = compileProcess.waitFor();
 
-        if (compileResult != 0) {
-            log.error("❌ Compilation failed for {}:\n{}", codeFileName, compileErrors.toString());
-            return "Compilation failed:\n" + compileErrors.toString();
+        if (compileResult != 0 || !exeFile.exists()) {
+            return "Compilation failed:\n" + compileErrors;
         }
 
-        if (!exeFile.exists()) {
-            log.error("❌ Compiled executable not found: {}", exeAbsolutePath);
-            return "Compilation failed. Executable missing.";
-        }
+        // Time and Memory tracking
+        Runtime runtime = Runtime.getRuntime();
+        runtime.gc();
 
-        log.info("🚀 Running executable at: {}", exeAbsolutePath);
+        long startTime = System.nanoTime();
+        long beforeMemory = (runtime.totalMemory() - runtime.freeMemory()) / 1024;
 
-        // Run the compiled executable using absolute path
         ProcessBuilder pb = new ProcessBuilder(exeAbsolutePath);
         pb.redirectInput(inputPath.toFile());
         pb.redirectErrorStream(true);
-
         Process process = pb.start();
+
+        boolean finished = process.waitFor(2, TimeUnit.SECONDS); // ⏱️ timeout check
+
+        if (!finished) {
+            process.destroyForcibly();
+            return "OUTPUT_START\n❌ Time Limit Exceeded\nOUTPUT_END\nTIME:-1\nMEMORY:-1\nVERDICT:❌ TLE";
+        }
+
         BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
         StringBuilder output = new StringBuilder();
         while ((line = reader.readLine()) != null) {
             output.append(line).append("\n");
         }
 
-        int exitCode = process.waitFor();
-        log.info("✅ Execution finished with exit code: {}", exitCode);
-        log.debug("📤 Program output:\n{}", output.toString().trim());
+        int exitCode = process.exitValue();
 
-        return output.toString().trim();
+        long endTime = System.nanoTime();
+        long afterMemory = (runtime.totalMemory() - runtime.freeMemory()) / 1024;
+
+        long timeUsedMs = (endTime - startTime) / 1_000_000;
+        long memoryUsedKB = afterMemory - beforeMemory;
+
+        return String.format(
+                "OUTPUT_START\n%s\nOUTPUT_END\nTIME:%dms\nMEMORY:%dKB",
+                output.toString().trim(), timeUsedMs, memoryUsedKB
+        );
     }
 }

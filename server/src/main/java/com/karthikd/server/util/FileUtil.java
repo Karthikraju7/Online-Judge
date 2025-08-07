@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.UUID;
 
 public class FileUtil {
 
@@ -19,18 +18,26 @@ public class FileUtil {
     }
 
     public static Path writeCodeToFile(String code, String extension, String identifier) throws IOException {
-        String filePath = CODE_DIR + "/" + identifier + "." + extension;
-        try (FileWriter writer = new FileWriter(filePath, false)) { // overwrite
+        String dirPath = CODE_DIR + "/" + identifier;
+        new File(dirPath).mkdirs(); // ✅ Create user-specific subfolder
+
+        String fileName;
+        if ("java".equals(extension)) {
+            fileName = "Main.java"; // ✅ For Java, use Main.java inside unique folder
+        } else {
+            fileName = identifier + "." + extension; // C++ and Python: no restriction
+        }
+
+        String filePath = dirPath + "/" + fileName;
+        try (FileWriter writer = new FileWriter(filePath, false)) {
             writer.write(code);
         }
         return Paths.get(filePath);
     }
 
     public static Path writeInputToFile(String input, String identifier) throws IOException {
-        Path inputPath = Paths.get("inputs", "input_" + identifier + ".txt");
+        Path inputPath = Paths.get(INPUT_DIR, "input_" + identifier + ".txt");
         Files.writeString(inputPath, input);
         return inputPath;
     }
-
 }
-
