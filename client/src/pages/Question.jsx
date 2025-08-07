@@ -17,7 +17,11 @@ const Question = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [editorRefs, setEditorRefs] = useState({ cpp: null, java: null, python: null });
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+  const [time, setTime] = useState(null);
+  const [memory, setMemory] = useState(null);
   const saveTimeoutRef = useRef(null);
+  const [verdict, setVerdict] = useState("");
+
 
   const defaultTemplates = {
     cpp: `#include <bits/stdc++.h>
@@ -38,7 +42,6 @@ public class Main {
 print("Hello World")`
   };
 
-  // Fetch problem details
   useEffect(() => {
     const fetchProblem = async () => {
       try {
@@ -54,37 +57,34 @@ print("Hello World")`
     fetchProblem();
   }, [slug, authFetch]);
 
-  // Fetch code from backend or fallback to default/localStorage
   useEffect(() => {
-  if (!authUser) return;
+    if (!authUser) return;
 
-  const fetchSavedCode = async () => {
-    const updatedMap = { ...codeMap };
+    const fetchSavedCode = async () => {
+      const updatedMap = { ...codeMap };
 
-    for (const lang of ["cpp", "java", "python"]) {
-      const local = localStorage.getItem(`code_${authUser.email}_${slug}_${lang}`);
+      for (const lang of ["cpp", "java", "python"]) {
+        const local = localStorage.getItem(`code_${authUser.email}_${slug}_${lang}`);
+        if (local) {
+          updatedMap[lang] = local;
+          continue;
+        }
 
-      if (local) {
-        updatedMap[lang] = local;
-        continue;
+        try {
+          const res = await authFetch(`${import.meta.env.VITE_API_URL}/code?slug=${slug}&language=${lang}`);
+          const backendCode = await res.text();
+          updatedMap[lang] = backendCode || defaultTemplates[lang];
+        } catch {
+          updatedMap[lang] = defaultTemplates[lang];
+        }
       }
 
-      try {
-        const res = await authFetch(`${import.meta.env.VITE_API_URL}/code?slug=${slug}&language=${lang}`);
-        const backendCode = await res.text();
-        updatedMap[lang] = backendCode || defaultTemplates[lang];
-      } catch {
-        updatedMap[lang] = defaultTemplates[lang];
-      }
-    }
+      setCodeMap(updatedMap);
+    };
 
-    setCodeMap(updatedMap);
-  };
+    fetchSavedCode();
+  }, [authUser, slug]);
 
-  fetchSavedCode();
-}, [authUser, slug]);
-
-  // Auto-save to backend + localStorage
   useEffect(() => {
     if (!authUser) return;
 
@@ -93,107 +93,96 @@ print("Hello World")`
       const code = codeMap[selectedLang];
       if (!code) return;
 
-      // Save to localStorage
       localStorage.setItem(`code_${authUser.email}_${slug}_${selectedLang}`, code);
 
-      // Save to backend
       authFetch(`${import.meta.env.VITE_API_URL}/code/save`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json", // 🛠️ ADD THIS
-      },
-      body: JSON.stringify({
-        slug,
-        language: selectedLang,
-        code: code.replace(/\r\n/g, "\n"),
-      }),
-
-    }).then(res => {
-        if (!res.ok) {
-          console.error('Failed to save code', res.status);
-        }
-      }).catch(err => {
-        console.error('Error saving code:', err);
-      });
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          slug,
+          language: selectedLang,
+          code: code.replace(/\r\n/g, "\n"),
+        }),
+      }).catch(console.error);
     }, 3000);
 
     return () => clearTimeout(saveTimeoutRef.current);
   }, [codeMap[selectedLang]]);
 
   const handleRun = async () => {
-    const code = codeMap[selectedLang];
-    if (!code.trim()) return setOutput("❌ Code is empty");
+  const code = codeMap[selectedLang];
+  if (!code.trim()) return setOutput("❌ Code is empty");
 
-    // Save to backend before run
-    await authFetch(`${import.meta.env.VITE_API_URL}/code/save`, {
+  await authFetch(`${import.meta.env.VITE_API_URL}/code/save`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ slug, language: selectedLang, code }),
+  });
+
+  setIsLoading(true);
+  setOutput("");
+  setVerdict("");
+  setTime(null);
+  setMemory(null);
+
+  try {
+    const res = await authFetch(`${import.meta.env.VITE_API_URL}/problems/run`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        slug,
-        language: selectedLang,
-        code: code.replace(/\r\n/g, "\n"),
-      }),
+      body: JSON.stringify({ language: selectedLang, code, input, slug }),
     });
+    const data = await res.json();
 
+    setOutput(data.output || ""); // your output
+    setTime(data.timeUsed || null); // in ms
+    setMemory(data.memoryUsed || null); // in KB
+    setVerdict(data.verdict || "");
+  } catch {
+    setOutput("❌ Server error");
+  } finally {
+    setIsLoading(false);
+  }
+};
 
-    setIsLoading(true);
-    try {
-      const res = await authFetch(`${import.meta.env.VITE_API_URL}/problems/run`, {
-        method: "POST",
-        body: JSON.stringify({ language: selectedLang, code, input, slug }),
-      });
-      const data = await res.json();
-      if (data.verdict === "✅ Correct") setOutput("✅ Success");
-      else setOutput(`❌ Failed\nYour Output:\n${data.output}\nExpected Output:\n${problem.sampleOutput}`);
-    } catch (err) {
-      setOutput("❌ Server error");
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleSubmit = async () => {
-    const code = codeMap[selectedLang];
-    if (!code.trim()) return setOutput("❌ Code is empty");
+  const code = codeMap[selectedLang];
+  if (!code.trim()) return setOutput("❌ Code is empty");
 
-    // Save before submit
-    await authFetch(`${import.meta.env.VITE_API_URL}/code/save`, {
+  await authFetch(`${import.meta.env.VITE_API_URL}/code/save`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ slug, language: selectedLang, code }),
+  });
+
+  setIsLoading(true);
+  setOutput("");
+  setVerdict("");
+  setTime(null);
+  setMemory(null);
+
+  try {
+    const res = await authFetch(`${import.meta.env.VITE_API_URL}/problems/submit`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        slug,
-        language: selectedLang,
-        code: code.replace(/\r\n/g, "\n"),
-      }),
+      body: JSON.stringify({ language: selectedLang, code, slug, email: authUser?.email }),
     });
+    const data = await res.json();
 
-
-    setIsLoading(true);
-    try {
-      const res = await authFetch(`${import.meta.env.VITE_API_URL}/problems/submit`, {
-        method: "POST",
-        body: JSON.stringify({ language: selectedLang, code, slug, email: authUser?.email }),
-      });
-      const data = await res.json();
-      setOutput(`🧠 Verdict: ${data.verdict}`);
-    } catch (err) {
-      setOutput("❌ Server error");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleReset = () => {
-    setIsResetModalOpen(true);
-  };
+    setOutput(data.output || "");
+    setTime(data.timeUsed || null);
+    setMemory(data.memoryUsed || null);
+    setVerdict(data.verdict || "");
+  } catch {
+    setOutput("❌ Server error");
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   const confirmReset = () => {
-    const updatedMap = { ...codeMap, [selectedLang]: defaultTemplates[selectedLang] };
-    setCodeMap(updatedMap);
+    const updated = { ...codeMap, [selectedLang]: defaultTemplates[selectedLang] };
+    setCodeMap(updated);
     localStorage.setItem(`code_${authUser?.email}_${slug}_${selectedLang}`, defaultTemplates[selectedLang]);
 
     const ref = editorRefs[selectedLang];
@@ -203,19 +192,15 @@ print("Hello World")`
       ref.getModel()?.pushStackElement();
     }
 
-    // Save reset to backend
     authFetch(`${import.meta.env.VITE_API_URL}/code/save`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         slug,
         language: selectedLang,
-        code: defaultTemplates[selectedLang].replace(/\r\n/g, "\n"),
+        code: defaultTemplates[selectedLang],
       }),
     });
-
 
     setOutput("🗑️ Code reset to default.");
     setIsResetModalOpen(false);
@@ -240,12 +225,8 @@ print("Hello World")`
           <Dialog.Title className="text-xl font-bold mb-4">Reset Code</Dialog.Title>
           <p className="mb-4">Are you sure you want to reset your code to the default template?</p>
           <div className="flex justify-end gap-2">
-            <button onClick={() => setIsResetModalOpen(false)} className="bg-gray-600 px-4 py-1 rounded hover:bg-gray-700 cursor-pointer">
-              Cancel
-            </button>
-            <button onClick={confirmReset} className="bg-red-600 px-4 py-1 rounded hover:bg-red-700 cursor-pointer">
-              Reset
-            </button>
+            <button onClick={() => setIsResetModalOpen(false)} className="bg-gray-600 px-4 py-1 rounded hover:bg-gray-700 cursor-pointer">Cancel</button>
+            <button onClick={confirmReset} className="bg-red-600 px-4 py-1 rounded hover:bg-red-700 cursor-pointer">Reset</button>
           </div>
         </Dialog.Panel>
       </Dialog>
@@ -259,13 +240,11 @@ print("Hello World")`
                 {problem.difficulty}
               </span>
             </div>
-
-            <pre className="whitespace-pre-wrap text-m mb-6">{problem.description}</pre>
-
+            <pre className="whitespace-pre-wrap mb-6">{problem.description}</pre>
             <div className="mt-4">
               <h3 className="text-lg font-semibold mb-2">Sample Test Case</h3>
-              <div className="mb-4 text-sm bg-black/30 p-3 rounded border border-white/10">
-                <div><strong>Input:</strong><pre className="whitespace-pre-wrap">{problem.sampleInput}</pre></div>
+              <div className="mb-4 bg-black/30 p-3 rounded border border-white/10 text-sm">
+                <div><strong>Input:</strong><pre>{problem.sampleInput}</pre></div>
                 <div><strong>Expected Output:</strong> {problem.sampleOutput}</div>
               </div>
             </div>
@@ -283,12 +262,12 @@ print("Hello World")`
                   <div className="flex gap-2">
                     <button onClick={handleRun} disabled={isLoading} className="bg-blue-600 px-4 py-1 rounded hover:bg-blue-700 cursor-pointer">Run</button>
                     <button onClick={handleSubmit} disabled={isLoading} className="bg-green-600 px-4 py-1 rounded hover:bg-green-700 cursor-pointer">Submit</button>
-                    <button onClick={handleReset} className="bg-red-600 px-4 py-1 rounded hover:bg-red-700 cursor-pointer">Reset</button>
+                    <button onClick={() => setIsResetModalOpen(true)} className="bg-red-600 px-4 py-1 rounded hover:bg-red-700 cursor-pointer">Reset</button>
                   </div>
                 </div>
 
                 <div className="mb-2">
-                  <select className="bg-gray-800 text-white p-2 rounded cursor-pointer ml-1" value={selectedLang} onChange={(e) => setSelectedLang(e.target.value)}>
+                  <select className="bg-gray-800 text-white p-2 rounded" value={selectedLang} onChange={(e) => setSelectedLang(e.target.value)}>
                     <option value="cpp">C++</option>
                     <option value="java">Java</option>
                     <option value="python">Python</option>
@@ -303,7 +282,7 @@ print("Hello World")`
                         width="100%"
                         language={lang}
                         value={codeMap[lang]}
-                        onChange={(newCode) => handleCodeChange(lang, newCode)}
+                        onChange={(code) => handleCodeChange(lang, code)}
                         onMount={(editor) => handleEditorMount(lang, editor)}
                         theme="vs-dark"
                         options={{
@@ -321,20 +300,33 @@ print("Hello World")`
                   ))}
                 </div>
 
-                {isLoading && (
-                  <div className="text-yellow-300 mt-2">⏳ Running Code...</div>
-                )}
+                {isLoading && <div className="text-yellow-300 mt-2">⏳ Running Code...</div>}
               </div>
             </Panel>
 
             <PanelResizeHandle className="h-2 bg-gray-700 cursor-row-resize" />
-
+            
             <Panel defaultSize={10} minSize={10}>
-              <div className="text-sm bg-black/40 p-3 rounded border border-white/10 h-full overflow-auto">
-                <strong>Output:</strong>
-                <pre className="text-gray-300 whitespace-pre-wrap break-words">{output}</pre>
-              </div>
-            </Panel>
+            <div className="bg-black/40 p-4 rounded border border-white/10 h-full overflow-auto text-sm">
+              <div className="text-white font-semibold mb-2">🖨️ Output:</div>
+
+              <pre className="bg-black/30 text-gray-200 p-3 rounded whitespace-pre-wrap break-words">
+                {output || "No output yet."}
+              </pre>
+
+              {(verdict || time || memory) && (
+                <div className="mt-4 space-y-1 text-gray-300 text-sm">
+                  {verdict && (
+                    <div>
+                      ✅ <strong>Verdict:</strong> <span className={verdict.includes("Accepted") || verdict.includes("Correct") ? "text-green-400" : "text-red-400"}>{verdict}</span>
+                    </div>
+                  )}
+                  {time && <div>⏱️ <strong>Time:</strong> {time} </div>}
+                  {memory && <div>💾 <strong>Memory:</strong> {memory} </div>}
+                </div>
+              )}
+            </div>
+          </Panel>
           </PanelGroup>
         </Panel>
       </PanelGroup>
