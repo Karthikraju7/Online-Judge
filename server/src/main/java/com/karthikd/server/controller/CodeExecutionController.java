@@ -55,19 +55,61 @@ public class CodeExecutionController {
             };
 
             String identifier = "temp_user_" + slug + "_" + language;
-            String output = executionService.runCode(language, finalCode, input, identifier).trim();
+            Map<String, String> result = executionService.runCode(language, finalCode, input, identifier);
+
+            String output = result.get("output").trim();
+            String timeUsedStr = result.getOrDefault("timeUsed", "-").replace("ms", "").trim();
+            String memoryUsedStr = result.getOrDefault("memoryUsed", "-").replace("KB", "").trim();
+
+            long timeUsed = 0;
+            long memoryUsed = 0;
+            try {
+                timeUsed = Long.parseLong(timeUsedStr);
+                memoryUsed = Long.parseLong(memoryUsedStr);
+
+                if (timeUsed < 0) {
+                    return Map.of(
+                            "output", "❌ Time Limit Exceeded",
+                            "verdict", "❌ TLE"
+                    );
+                }
+
+                if (memoryUsed < 0) {
+                    return Map.of(
+                            "output", "❌ Memory Limit Exceeded",
+                            "verdict", "❌ MLE"
+                    );
+                }
+            } catch (NumberFormatException e) {
+                return Map.of(
+                        "output", "❌ Invalid resource output: " + e.getMessage(),
+                        "verdict", "❌ Error"
+                );
+            }
+
 
             Problem problem = problemRepository.findBySlug(slug);
             String expected = problem.getSampleOutput().trim();
 
             String verdict = output.equals(expected) ? "✅ Correct" : "❌ Incorrect";
 
-            return Map.of("output", output, "verdict", verdict);
+            return Map.of(
+                    "output", output,
+                    "verdict", verdict,
+                    "timeUsed", timeUsed + "ms",
+                    "memoryUsed", memoryUsed + "KB"
+            );
         } catch (Exception e) {
             e.printStackTrace();
-            return Map.of("output", "❌ Server error: " + e.getMessage());
+            return Map.of(
+                    "output", "❌ Server error: " + e.getMessage(),
+                    "verdict", "❌ Error",
+                    "timeUsed", "0",
+                    "memoryUsed", "0"
+            );
         }
     }
+
 
     @PostMapping("/submit")
     public Map<String, Object> submitCode(@RequestBody Map<String, String> request) throws Exception {
@@ -90,7 +132,6 @@ public class CodeExecutionController {
         };
 
         String identifier = email + "_" + slug + "_" + language;
-        List<String> wrappedInputs = new ArrayList<>();
 
         for (TestCase test : problem.getHiddenTestCases()) {
             String input = switch (language) {
@@ -100,10 +141,62 @@ public class CodeExecutionController {
                 default -> test.getInput();
             };
 
-            wrappedInputs.add(input);
-            String output = executionService.runCode(language, finalCode, input, identifier).trim();
+            Map<String, String> result = executionService.runCode(language, finalCode, input, identifier);
 
-            if (output.equals(test.getExpectedOutput().trim())) passed++;
+            String output = result.getOrDefault("output", "").trim();
+            String timeUsedStr = result.getOrDefault("timeUsed", "-").replace("ms", "").trim();
+            String memoryUsedStr = result.getOrDefault("memoryUsed", "-").replace("KB", "").trim();
+
+            long timeUsed = 0;
+            long memoryUsed = 0;
+            try {
+                timeUsed = Long.parseLong(timeUsedStr);
+                memoryUsed = Long.parseLong(memoryUsedStr);
+            } catch (NumberFormatException e) {
+                return Map.of("verdict", "❌ Invalid resource usage output from executor");
+            }
+
+            // TLE Check
+            if (timeUsed == -1) {
+                return Map.of(
+                        "verdict", "❌ Time Limit Exceeded at test case " + (passed + 1),
+                        "passed", passed,
+                        "total", total
+                );
+            }
+            if (timeUsed > 1000) {
+                return Map.of(
+                        "verdict", "❌ Time Limit Exceeded at test case " + (passed + 1),
+                        "passed", passed,
+                        "total", total
+                );
+            }
+
+
+            // MLE Check
+            if (memoryUsed == -1) {
+                return Map.of(
+                        "verdict", "❌ Memory Limit Exceeded at test case " + (passed + 1),
+                        "passed", passed,
+                        "total", total
+                );
+            }
+            if (memoryUsed > 262144) {
+                return Map.of(
+                        "verdict", "❌ Memory Limit Exceeded at test case " + (passed + 1),
+                        "passed", passed,
+                        "total", total
+                );
+            }
+
+
+            // Normalize and compare outputs
+            String normalizedOutput = output.replaceAll("\\s+", " ").trim();
+            String normalizedExpectedOutput = test.getExpectedOutput().replaceAll("\\s+", " ").trim();
+
+            if (normalizedOutput.equals(normalizedExpectedOutput)) {
+                passed++;
+            }
         }
 
         if (passed == total) {
@@ -116,8 +209,13 @@ public class CodeExecutionController {
                 ? "✅ Accepted"
                 : "❌ " + passed + "/" + total + " test cases passed";
 
-        return Map.of("verdict", verdict);
+        return Map.of(
+                "verdict", verdict,
+                "passed", passed,
+                "total", total
+        );
     }
+
 
 
 }
