@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  oj-mysql:
+    image: mysql:latest
+    container_name: oj-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: online_judge
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+
+  online-judge-backend:
+    image: online-judge-backend
+    container_name: online-judge-backend
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env.docker
+    depends_on:
+      - oj-mysql
+
+volumes:
+  mysql-data:
