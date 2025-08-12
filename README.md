@@ -47,8 +47,8 @@ Built with **Spring Boot, MySQL, React, Docker, and JWT authentication**.
 1. **Clone the repository**
 
    ```bash
-   git clone https://github.com/your-username/online-judge.git
-   cd online-judge
+   git clone https://github.com/Karthikraju7/Online-Judge.git
+   cd Online-Judge
 
 2. **Backend Setup**
 
