@@ -122,11 +122,6 @@ export const AuthProvider = ({ children }) => {
         : {}),
     };
 
-    console.log("📤 authFetch URL:", url);
-    console.log("🔐 Token:", token);
-    console.log("📦 Headers:", headers);
-    console.log("🧾 Body:", options.body);
-
     try {
       const res = await fetch(url, {
         ...options,
