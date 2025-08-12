@@ -71,7 +71,7 @@ Built with **Spring Boot, MySQL, React, Docker, and JWT authentication**.
 
 ## 📷 Screenshots
 
-You can view all screenshots in the [OJ_ScreenShots folder](OJ_ScreenShots/) here.
+Check out all the screenshots in the [OJ_ScreenShots folder](OJ_ScreenShots/) here.
 
 
 
