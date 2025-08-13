@@ -53,7 +53,7 @@ Built with **Spring Boot, MySQL, React, Docker, and JWT authentication**.
 2. **Backend Setup**
 
 - Install Java 17+ and Maven
-- Update `application.properties` with your DB credentials
+- Update `application.yml` with your DB credentials
 - Run:
 
   ```bash
