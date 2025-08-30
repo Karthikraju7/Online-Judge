@@ -35,7 +35,7 @@ function Home() {
 
         <div className="text-3xl sm:text-4xl text-gray-300 mb-12 max-w-2xl mx-auto">
           A place to practice, improve, and master{' '}
-          <span className="relative h-[2.5rem] w-[150px] text-yellow-500 block">
+          <span className="relative h-[2.5rem] w-[150px] text-yellow-400 block">
             <span className="absolute left-60 top-3 w-full text-center animate-text">
               {words.map((word, i) => (
                 <div

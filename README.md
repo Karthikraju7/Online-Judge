@@ -47,13 +47,13 @@ Built with **Spring Boot, MySQL, React, Docker, and JWT authentication**.
 1. **Clone the repository**
 
    ```bash
-   git clone https://github.com/your-username/online-judge.git
-   cd online-judge
+   git clone https://github.com/Karthikraju7/Online-Judge.git
+   cd Online-Judge
 
 2. **Backend Setup**
 
 - Install Java 17+ and Maven
-- Update `application.properties` with your DB credentials
+- Update `application.yml` with your DB credentials
 - Run:
 
   ```bash
@@ -71,7 +71,7 @@ Built with **Spring Boot, MySQL, React, Docker, and JWT authentication**.
 
 ## 📷 Screenshots
 
-You can view all screenshots in the [OJ_ScreenShots folder](OJ_ScreenShots/) here.
+Check out all the screenshots in the [OJ_ScreenShots folder](OJ_ScreenShots/) here.
 
 
 
