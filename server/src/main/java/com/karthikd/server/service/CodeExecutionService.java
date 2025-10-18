@@ -42,13 +42,10 @@ public class CodeExecutionService {
     }
     @Value("${GEMINI_API_KEY}")
     private String apiKey;
-
     public String getAiDebugSuggestion(String code, String output, String problemDescription, String language) {
         try {
-            System.out.println("API_KEY = " + apiKey);
             RestTemplate restTemplate = new RestTemplate();
             String modelId = "gemini-2.5-flash";
-            System.out.println("Using model: " + modelId);
             String generateUrl = "https://generativelanguage.googleapis.com/v1beta/models/"
                     + modelId + ":generateContent?key=" + apiKey;
 
