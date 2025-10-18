@@ -57,13 +57,17 @@ public class CodeExecutionService {
 
             Language: %s
 
-            Their code:
+            Code:
             %s
 
-            The output they got:
+            Output:
             %s
 
-            Please explain the issue and suggest what to fix. Keep it short and clear.
+            Analyze their approach and thought process.
+            - If there is a mistake, explain why it happened and give hints on how to correct it.
+            - If the code is correct, suggest possible improvements or optimizations.
+            - Focus on guiding the user to think better, not giving them the full corrected code.
+            - Keep it short, clear, and educational.
         """.formatted(problemDescription, language, code, output);
 
             Map<String, Object> body = Map.of(
