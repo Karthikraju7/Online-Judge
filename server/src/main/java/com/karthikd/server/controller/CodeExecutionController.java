@@ -9,6 +9,7 @@ import com.karthikd.server.repository.UserProblemRepository;
 import com.karthikd.server.repository.UserRepository;
 import com.karthikd.server.service.CodeExecutionService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
@@ -21,8 +22,6 @@ import static com.karthikd.server.util.JavaWrapper.wrapJavaCode;
 import static com.karthikd.server.util.JavaWrapper.wrapJavaCodeInput;
 import static com.karthikd.server.util.PythonWrapper.wrapPythonCode;
 import static com.karthikd.server.util.PythonWrapper.wrapPythonCodeInput;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 
 @RestController
 @RequestMapping("/problems")
@@ -216,7 +215,22 @@ public class CodeExecutionController {
         );
     }
 
+    @PostMapping("/ai/debug")
+    public Map<String, String> getAiDebugHelp(@RequestBody Map<String, String> request) {
+        try {
+            String code = request.get("code");
+            String output = request.get("output");
+            String problemDescription = request.get("problemDescription");
+            String language = request.get("language");
 
+            String suggestion = executionService.getAiDebugSuggestion(code, output, problemDescription, language);
+
+            return Map.of("response", suggestion);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Map.of("response", "⚠️ AI failed: " + e.getMessage());
+        }
+    }
 
 }
 

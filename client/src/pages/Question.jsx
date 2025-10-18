@@ -8,7 +8,6 @@ import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 const Question = () => {
   const { slug } = useParams();
   const { authUser, authFetch } = useAuth();
-
   const [problem, setProblem] = useState(null);
   const [selectedLang, setSelectedLang] = useState("cpp");
   const [codeMap, setCodeMap] = useState({ cpp: "", java: "", python: "" });
@@ -21,6 +20,9 @@ const Question = () => {
   const [memory, setMemory] = useState(null);
   const saveTimeoutRef = useRef(null);
   const [verdict, setVerdict] = useState("");
+  const [aiSuggestion, setAiSuggestion] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+
 
 
   const defaultTemplates = {
@@ -306,27 +308,85 @@ print("Hello World")`
 
             <PanelResizeHandle className="h-2 bg-gray-700 cursor-row-resize" />
             
-            <Panel defaultSize={10} minSize={10}>
-            <div className="bg-black/40 p-4 rounded border border-white/10 h-full overflow-auto text-sm">
-              <div className="text-white font-semibold mb-2">🖨️ Output:</div>
-
-              <pre className="bg-black/30 text-gray-200 p-3 rounded whitespace-pre-wrap break-words">
-                {output || "No output yet."}
-              </pre>
-
-              {(verdict || time || memory) && (
-                <div className="mt-4 space-y-1 text-gray-300 text-sm">
-                  {verdict && (
-                    <div>
-                      ✅ <strong>Verdict:</strong> <span className={verdict.includes("Accepted") || verdict.includes("Correct") ? "text-green-400" : "text-red-400"}>{verdict}</span>
-                    </div>
-                  )}
-                  {time && <div>⏱️ <strong>Time:</strong> {time} </div>}
-                  {memory && <div>💾 <strong>Memory:</strong> {memory} </div>}
+            <Panel defaultSize={20} minSize={15}>
+              <div className="bg-gray-900 p-4 rounded-lg border border-gray-700 h-full overflow-auto flex flex-col gap-4">
+                
+                {/* Output Section */}
+                <div className="flex flex-col gap-1">
+                  <div className="text-white font-semibold mb-1">🖨️ Output:</div>
+                  <pre className="bg-gray-800 text-gray-200 p-3 rounded shadow-inner max-h-40 overflow-auto whitespace-pre-wrap break-words">
+                    {output || "No output yet."}
+                  </pre>
                 </div>
-              )}
-            </div>
-          </Panel>
+
+                {/* Verdict, Time, Memory */}
+                {(verdict || time || memory) && (
+                  <div className="flex flex-col gap-1 text-gray-300 text-sm">
+                    {verdict && (
+                      <div>
+                        ✅ <strong>Verdict:</strong>{" "}
+                        <span className={verdict.includes("Accepted") || verdict.includes("Correct") ? "text-green-400" : "text-red-400"}>
+                          {verdict}
+                        </span>
+                      </div>
+                    )}
+                    {time && <div>⏱️ <strong>Time:</strong> {time}</div>}
+                    {memory && <div>💾 <strong>Memory:</strong> {memory}</div>}
+                  </div>
+                )}
+
+                {/* AI Suggestion Collapsible */}
+                {aiSuggestion && (
+                  <div className="flex flex-col gap-1">
+                    <div className="flex justify-between items-center">
+                      <div className="text-white font-semibold mb-1">🤖 AI Suggestion:</div>
+                      <button
+                        onClick={() => setAiSuggestion("")}
+                        className="text-gray-400 hover:text-white text-sm"
+                      >
+                        ✖
+                      </button>
+                    </div>
+                    <pre className="bg-purple-800/30 text-purple-200 p-3 rounded shadow-inner max-h-36 overflow-auto whitespace-pre-wrap break-words">
+                      {aiSuggestion}
+                    </pre>
+                  </div>
+                )}
+
+                {/* AI Help Button */}
+                {output && (
+                  <div className="mt-auto flex justify-start">
+                    <button
+                      onClick={async () => {
+                        try {
+                          setAiLoading(true);
+                          const res = await authFetch(`${import.meta.env.VITE_API_URL}/problems/ai/debug`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                              code: codeMap[selectedLang],
+                              output,
+                              problemDescription: problem.description,
+                              language: selectedLang,
+                            }),
+                          });
+                          const data = await res.json();
+                          setAiSuggestion(data.response || "No response from AI");
+                        } catch (err) {
+                          setAiSuggestion("⚠️ Failed to get AI response");
+                        } finally {
+                          setAiLoading(false);
+                        }
+                      }}
+                      className={`bg-purple-600 px-4 py-1 rounded hover:bg-purple-700 cursor-pointer ${aiLoading ? "opacity-70 cursor-not-allowed" : ""}`}
+                      disabled={aiLoading}
+                    >
+                      {aiLoading ? "🤖 Thinking..." : "💬 Ask AI for Help"}
+                    </button>
+                  </div>
+                )}
+              </div>
+            </Panel>
           </PanelGroup>
         </Panel>
       </PanelGroup>
