@@ -24,6 +24,12 @@ Built with **Spring Boot, MySQL, React, Docker, and JWT authentication**.
   - Add/Edit problem functionality  
   - Hidden test case handling  
   - Custom evaluation logic for each language
+    
+- **AI Coding Assistant** – Analyze your code without giving full solutions:  
+  - Suggest improvements and optimizations  
+  - Explain mistakes and guide error correction  
+  - Analyze **time and space complexity**  
+  - Focus on **thought process**, not direct code
 
 - **Scalable Architecture** – Docker-based isolated execution environment
 
