@@ -66,6 +66,7 @@ public class CodeExecutionService {
             Analyze their approach and thought process.
             - If there is a mistake, explain why it happened and give hints on how to correct it.
             - If the code is correct, suggest possible improvements or optimizations.
+            - Analyze the time and space complexity of the code.
             - Focus on guiding the user to think better, not giving them the full corrected code.
             - Keep it short, clear, and educational.
         """.formatted(problemDescription, language, code, output);
