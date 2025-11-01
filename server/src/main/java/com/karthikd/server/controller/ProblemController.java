@@ -24,12 +24,6 @@ public class ProblemController {
     @Autowired
     private ProblemRepository problemRepository;
 
-
-//    @PostMapping("/add")
-//    public ResponseEntity<?> addProblem(@RequestBody AddProblemRequest request) {
-//        return ResponseEntity.ok(problemService.addProblem(request));
-//    }
-
     @PostMapping("/add-full")
     public ResponseEntity<?> addProblemWithTestCases(@RequestBody AddProblemRequest request) {
         return ResponseEntity.ok(problemService.addFullProblem(request));
