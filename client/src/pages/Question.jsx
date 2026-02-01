@@ -246,7 +246,11 @@ print("Hello World")`
             <div className="mt-4">
               <h3 className="text-lg font-semibold mb-2">Sample Test Case</h3>
               <div className="mb-4 bg-black/30 p-3 rounded border border-white/10 text-sm">
-                <div><strong>Input:</strong><pre>{problem.sampleInput}</pre></div>
+                <div><strong>Input:</strong>
+                  <pre className="whitespace-pre-wrap">
+                    {problem.sampleInput.replace(/\\n/g, "\n")}
+                  </pre>
+                </div>
                 <div><strong>Expected Output:</strong> {problem.sampleOutput}</div>
               </div>
             </div>

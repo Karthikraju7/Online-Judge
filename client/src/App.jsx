@@ -23,7 +23,7 @@ const App = () => {
   return (
     <div className="h-screen flex flex-col">
       <Navbar isLoggedIn={isLoggedIn} />
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-y-auto no-scrollbar">
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />

@@ -27,7 +27,7 @@ const Problems = () => {
   );
 
   return (
-    <div className="px-4 pt-6 pb-4 text-white">
+    <div className="px-4 pt-6 pb-4 text-white min-h-screen">
       <h2 className="text-4xl font-extrabold mb-8 text-center text-white">
         Problems
       </h2>
@@ -53,8 +53,7 @@ const Problems = () => {
 
       {/* Problem List */}
       <div
-        className="max-w-5xl mx-auto overflow-y-auto mt-2 rounded-lg border border-gray-800 shadow-inner"
-        style={{ maxHeight: "calc(100vh - 220px)" }}
+        className="max-w-5xl mx-auto overflow-y-auto mt-2 rounded-lg border border-gray-800 shadow-inner max-h-[calc(100vh-220px)]"
       >
         {filteredProblems.length > 0 ? (
           filteredProblems.map((problem, index) => (

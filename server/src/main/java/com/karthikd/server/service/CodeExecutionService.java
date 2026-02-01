@@ -18,6 +18,9 @@ import java.nio.file.Path;
 @Service
 public class CodeExecutionService {
     public Map<String, String> runCode(String language, String code, String input, String identifier) throws Exception {
+        System.out.println("===== STDIN START =====");
+        System.out.println(input.replace("\n", "\\n"));
+        System.out.println("===== STDIN END =====");
         System.out.println("👉 Service Called with Language: " + language + ", Identifier: " + identifier);
         String result = switch (language.toLowerCase()) {
             case "cpp" -> {

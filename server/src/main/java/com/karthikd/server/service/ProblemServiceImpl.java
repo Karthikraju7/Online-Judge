@@ -82,8 +82,18 @@ public class ProblemServiceImpl implements ProblemService{
         problem.setSlug(request.getSlug());
         problem.setDifficulty(request.getDifficulty());
         problem.setDescription(request.getDescription());
-        problem.setSampleInput(request.getSampleInput());
-        problem.setSampleOutput(request.getSampleOutput());
+        String sampleInput = request.getSampleInput();
+        String sampleOutput = request.getSampleOutput();
+
+        if (sampleInput != null) {
+            sampleInput = sampleInput.replace("\\n", "\n");
+        }
+        if (sampleOutput != null) {
+            sampleOutput = sampleOutput.replace("\\n", "\n");
+        }
+
+        problem.setSampleInput(sampleInput);
+        problem.setSampleOutput(sampleOutput);
 
         List<TestCase> hiddenTestCases = request.getHiddenTestCases()
                 .stream()
@@ -108,8 +118,18 @@ public class ProblemServiceImpl implements ProblemService{
         existing.setTitle(request.getTitle());
         existing.setDescription(request.getDescription());
         existing.setDifficulty(request.getDifficulty());
-        existing.setSampleInput(request.getSampleInput());
-        existing.setSampleOutput(request.getSampleOutput());
+        String sampleInput = request.getSampleInput();
+        String sampleOutput = request.getSampleOutput();
+
+        if (sampleInput != null) {
+            sampleInput = sampleInput.replace("\\n", "\n");
+        }
+        if (sampleOutput != null) {
+            sampleOutput = sampleOutput.replace("\\n", "\n");
+        }
+
+        existing.setSampleInput(sampleInput);
+        existing.setSampleOutput(sampleOutput);
 
         // Map existing test cases by ID
         Map<Long, TestCase> existingMap = existing.getHiddenTestCases().stream()

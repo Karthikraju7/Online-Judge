@@ -5,6 +5,8 @@ server:
     max-swallow-size: 10MB
 
 spring:
+  config:
+    import: optional:file:.env
   application:
     name: server
 

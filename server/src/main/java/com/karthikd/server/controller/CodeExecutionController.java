@@ -16,11 +16,8 @@ import java.util.List;
 import java.util.Map;
 
 import static com.karthikd.server.util.CppWrapper.wrapCppCode;
-import static com.karthikd.server.util.CppWrapper.wrapCppCodeInput;
 import static com.karthikd.server.util.JavaWrapper.wrapJavaCode;
-import static com.karthikd.server.util.JavaWrapper.wrapJavaCodeInput;
 import static com.karthikd.server.util.PythonWrapper.wrapPythonCode;
-import static com.karthikd.server.util.PythonWrapper.wrapPythonCodeInput;
 
 @RestController
 @RequestMapping("/problems")
@@ -132,12 +129,12 @@ public class CodeExecutionController {
         String identifier = email + "_" + slug + "_" + language;
 
         for (TestCase test : problem.getHiddenTestCases()) {
-            String input = switch (language) {
-                case "python" -> wrapPythonCodeInput(test.getInput(), test.getExpectedOutput());
-                case "cpp" -> wrapCppCodeInput(test.getInput(), test.getExpectedOutput());
-                case "java" -> wrapJavaCodeInput(test.getInput(), test.getExpectedOutput());
-                default -> test.getInput();
-            };
+            String input = test.getInput();
+
+            if (!input.endsWith("\n")) {
+                input = input + "\n";
+            }
+
 
             Map<String, String> result = executionService.runCode(language, finalCode, input, identifier);
 
@@ -162,7 +159,7 @@ public class CodeExecutionController {
                         "total", total
                 );
             }
-            if (timeUsed > 1000) {
+            if (timeUsed > 3000) {
                 return Map.of(
                         "verdict", "❌ Time Limit Exceeded at test case " + (passed + 1),
                         "passed", passed,
