@@ -18,26 +18,36 @@ public class FileUtil {
     }
 
     public static Path writeCodeToFile(String code, String extension, String identifier) throws IOException {
-        String dirPath = CODE_DIR + "/" + identifier;
-        new File(dirPath).mkdirs(); // ✅ Create user-specific subfolder
+
+        String safeIdentifier = identifier.replaceAll("[^a-zA-Z0-9]", "_");
+
+        String dirPath = CODE_DIR + "/" + safeIdentifier;
+        new File(dirPath).mkdirs();
 
         String fileName;
         if ("java".equals(extension)) {
-            fileName = "Main.java"; // ✅ For Java, use Main.java inside unique folder
+            fileName = "Main.java"; // Java needs Main.java
         } else {
-            fileName = identifier + "." + extension; // C++ and Python: no restriction
+            fileName = safeIdentifier + "." + extension;
         }
 
         String filePath = dirPath + "/" + fileName;
+
         try (FileWriter writer = new FileWriter(filePath, false)) {
             writer.write(code);
         }
+
         return Paths.get(filePath);
     }
 
     public static Path writeInputToFile(String input, String identifier) throws IOException {
-        Path inputPath = Paths.get(INPUT_DIR, "input_" + identifier + ".txt");
+
+        String safeIdentifier = identifier.replaceAll("[^a-zA-Z0-9]", "_");
+
+        Path inputPath = Paths.get(INPUT_DIR, "input_" + safeIdentifier + ".txt");
+
         Files.writeString(inputPath, input);
+
         return inputPath;
     }
 }

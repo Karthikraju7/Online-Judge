@@ -9,13 +9,17 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class CppExecutor {
 
-    public static String runCpp(Path codePath, Path inputPath) throws IOException, InterruptedException {
+    public static File compileCpp(String code, String identifier) throws IOException, InterruptedException {
+
+        Path codePath = FileUtil.writeCodeToFile(code, "cpp", identifier);
+
         String codeFileName = codePath.getFileName().toString();
         String exeFileName = codeFileName.replace(".cpp", "");
 
         boolean isWindows = System.getProperty("os.name").toLowerCase().contains("win");
         String exeFileNameWithExt = isWindows ? exeFileName + ".exe" : exeFileName;
-        File exeFile = new File("codes", exeFileNameWithExt);
+
+        File exeFile = new File(codePath.getParent().toFile(), exeFileNameWithExt);
         String exeAbsolutePath = exeFile.getAbsolutePath();
 
         Process compileProcess = new ProcessBuilder(
@@ -25,42 +29,60 @@ public class CppExecutor {
         BufferedReader errorReader = new BufferedReader(new InputStreamReader(compileProcess.getErrorStream()));
         StringBuilder compileErrors = new StringBuilder();
         String line;
+
         while ((line = errorReader.readLine()) != null) {
             compileErrors.append(line).append("\n");
         }
 
-        int compileResult = compileProcess.waitFor();
+        int result = compileProcess.waitFor();
 
-        if (compileResult != 0 || !exeFile.exists()) {
-            return "Compilation failed:\n" + compileErrors;
+        if (result != 0 || !exeFile.exists()) {
+            throw new RuntimeException("Compilation Error:\n" + compileErrors);
         }
 
-        // Time and Memory tracking
+        return exeFile;
+    }
+
+    public static String runCpp(File exeFile, String input) throws Exception {
+
         Runtime runtime = Runtime.getRuntime();
         runtime.gc();
 
         long startTime = System.nanoTime();
         long beforeMemory = (runtime.totalMemory() - runtime.freeMemory()) / 1024;
 
-        ProcessBuilder pb = new ProcessBuilder(exeAbsolutePath);
-        pb.redirectInput(inputPath.toFile());
+        // OS check
+        boolean isWindows = System.getProperty("os.name").toLowerCase().contains("win");
+
+        ProcessBuilder pb = isWindows
+                ? new ProcessBuilder("cmd.exe", "/c", exeFile.getAbsolutePath())
+                : new ProcessBuilder(exeFile.getAbsolutePath());
+
         pb.redirectErrorStream(true);
+
         Process process = pb.start();
 
-        boolean finished = process.waitFor(2, TimeUnit.SECONDS); // ⏱️ timeout check
+        // Send input
+        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(process.getOutputStream()));
+        writer.write(input);
+        writer.flush();
+        writer.close();
+
+        boolean finished = process.waitFor(5, TimeUnit.SECONDS);
 
         if (!finished) {
             process.destroyForcibly();
-            return "OUTPUT_START\n❌ Time Limit Exceeded\nOUTPUT_END\nTIME:-1\nMEMORY:-1\nVERDICT:❌ TLE";
+            return "OUTPUT_START\n❌ Time Limit Exceeded\nOUTPUT_END\nTIME:-1\nMEMORY:-1";
         }
 
+        // Read output
         BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
         StringBuilder output = new StringBuilder();
+        String line;
+
         while ((line = reader.readLine()) != null) {
             output.append(line).append("\n");
         }
-
-        int exitCode = process.exitValue();
 
         long endTime = System.nanoTime();
         long afterMemory = (runtime.totalMemory() - runtime.freeMemory()) / 1024;

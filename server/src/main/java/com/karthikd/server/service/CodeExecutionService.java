@@ -1,7 +1,6 @@
 package com.karthikd.server.service;
 
 import com.karthikd.server.util.CppExecutor;
-import com.karthikd.server.util.FileUtil;
 import com.karthikd.server.util.JavaExecutor;
 import com.karthikd.server.util.PythonExecutor;
 import org.springframework.beans.factory.annotation.Value;
@@ -9,29 +8,56 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
-import java.nio.file.Path;
-
-
 @Service
 public class CodeExecutionService {
+
+    // RUN
     public Map<String, String> runCode(String language, String code, String input, String identifier) throws Exception {
-        System.out.println("===== STDIN START =====");
-        System.out.println(input.replace("\n", "\\n"));
-        System.out.println("===== STDIN END =====");
-        System.out.println("👉 Service Called with Language: " + language + ", Identifier: " + identifier);
-        String result = switch (language.toLowerCase()) {
-            case "cpp" -> {
-                Path codePath = FileUtil.writeCodeToFile(code, "cpp", identifier);
-                Path inputPath = FileUtil.writeInputToFile(input, identifier);
-                yield CppExecutor.runCpp(codePath, inputPath);
-            }
-            case "python" -> PythonExecutor.runPython(code, input, identifier);
-            case "java" -> JavaExecutor.runJava(code, input, identifier);
-            default -> throw new IllegalArgumentException("Unsupported language: " + language);
+
+        Object compiled = compile(language, code, identifier);
+        return runCompiled(compiled, language, input);
+    }
+
+    // COMPILE
+    public Object compile(String language, String code, String identifier) throws Exception {
+
+        return switch (language.toLowerCase()) {
+            case "cpp" -> CppExecutor.compileCpp(code, identifier);
+            case "java" -> JavaExecutor.compileJava(code, identifier);
+            case "python" -> code;
+            default -> throw new IllegalArgumentException("Unsupported language");
         };
+    }
+
+    // RUN MULTIPLE TIMES
+    public Map<String, String> runCompiled(Object compiled, String language, String input) throws Exception {
+
+        String result;
+
+        switch (language.toLowerCase()) {
+            case "cpp":
+                result = CppExecutor.runCpp((File) compiled, input);
+                break;
+
+            case "java":
+                result = JavaExecutor.runJava((File) compiled, input);
+                break;
+
+            case "python":
+                result = PythonExecutor.runPython((String) compiled, input);
+                break;
+
+            default:
+                throw new IllegalArgumentException("Unsupported language");
+        }
+
+        if (result == null || result.isEmpty()) {
+            throw new RuntimeException("Execution failed: No output from executor");
+        }
 
         String output = extractBetween(result, "OUTPUT_START", "OUTPUT_END").trim();
         String timeUsed = extractAfter(result, "TIME:").trim();
@@ -41,13 +67,19 @@ public class CodeExecutionService {
         response.put("output", output);
         response.put("timeUsed", timeUsed);
         response.put("memoryUsed", memoryUsed);
+
         return response;
     }
+
+    // AI DEBUG
+
     @Value("${GEMINI_API_KEY}")
     private String apiKey;
+
     public String getAiDebugSuggestion(String code, String output, String problemDescription, String language) {
         try {
             RestTemplate restTemplate = new RestTemplate();
+
             String modelId = "gemini-2.5-flash";
             String generateUrl = "https://generativelanguage.googleapis.com/v1beta/models/"
                     + modelId + ":generateContent?key=" + apiKey;
@@ -70,13 +102,12 @@ public class CodeExecutionService {
             - If there is a mistake, explain why it happened and give hints on how to correct it.
             - If the code is correct, suggest possible improvements or optimizations.
             - Analyze the time and space complexity of the code.
-            - Focus on guiding the user to think better, not giving them the full corrected code.
-            - Keep it short, clear, and educational.
+            - Keep it short and clear.
         """.formatted(problemDescription, language, code, output);
 
             Map<String, Object> body = Map.of(
-                    "contents", new Object[] {
-                            Map.of("parts", new Object[] { Map.of("text", prompt) })
+                    "contents", new Object[]{
+                            Map.of("parts", new Object[]{Map.of("text", prompt)})
                     }
             );
 

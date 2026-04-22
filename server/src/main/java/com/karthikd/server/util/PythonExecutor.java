@@ -6,16 +6,15 @@ import java.util.concurrent.TimeUnit;
 
 public class PythonExecutor {
 
-    public static String runPython(String code, String input, String identifier) throws IOException, InterruptedException {
-        Path codeFilePath = FileUtil.writeCodeToFile(code, "py", identifier);
-        Path inputFilePath = FileUtil.writeInputToFile(input, identifier);
+    public static String runPython(String code, String input) throws IOException, InterruptedException {
 
-        String[] command = {"python", codeFilePath.toString()};
-        ProcessBuilder processBuilder = new ProcessBuilder(command);
-        processBuilder.redirectInput(inputFilePath.toFile());
+        // Write code
+        Path codeFilePath = FileUtil.writeCodeToFile(code, "py", "temp_py");
+
+        ProcessBuilder processBuilder = new ProcessBuilder("python", codeFilePath.toString());
         processBuilder.redirectErrorStream(true);
 
-        // Time and Memory tracking
+        // Time & memory tracking
         Runtime runtime = Runtime.getRuntime();
         runtime.gc();
 
@@ -24,16 +23,23 @@ public class PythonExecutor {
 
         Process process = processBuilder.start();
 
-        boolean finished = process.waitFor(2, TimeUnit.SECONDS); // ⏱️ timeout check
+        // Send input directly
+        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(process.getOutputStream()));
+        writer.write(input);
+        writer.flush();
+        writer.close();
+
+        boolean finished = process.waitFor(5, TimeUnit.SECONDS);
 
         if (!finished) {
             process.destroyForcibly();
-            return "OUTPUT_START\n❌ Time Limit Exceeded\nOUTPUT_END\nTIME:-1\nMEMORY:-1\nVERDICT:❌ TLE";
+            return "OUTPUT_START\n❌ Time Limit Exceeded\nOUTPUT_END\nTIME:-1\nMEMORY:-1";
         }
 
         BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
         StringBuilder output = new StringBuilder();
         String line;
+
         while ((line = reader.readLine()) != null) {
             output.append(line).append("\n");
         }
@@ -48,7 +54,7 @@ public class PythonExecutor {
 
         if (exitCode != 0) {
             return String.format(
-                    "OUTPUT_START\n❌ Error during Python execution\nOUTPUT_END\nTIME:%dms\nMEMORY:%dKB",
+                    "OUTPUT_START\n❌ Runtime Error\nOUTPUT_END\nTIME:%dms\nMEMORY:%dKB",
                     timeUsedMs, memoryUsedKB
             );
         }

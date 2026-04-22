@@ -7,6 +7,6 @@ import java.util.Map;
 public class CppWrapper {
 
     public static String wrapCppCode(String userCode, String slug) {
-        return userCode; // user writes full code including main, cin, cout
+        return userCode;
     }
 }
