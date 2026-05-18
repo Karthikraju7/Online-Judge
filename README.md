@@ -1,4 +1,4 @@
-# 🖥️ Online Coding Judge Platform
+# Online Coding Judge Platform
 
 A **full-stack online coding judge** platform supporting **Python, Java, and C++**, designed for secure, scalable, and efficient code evaluation.  
 Built with **Spring Boot, MySQL, React, Docker, and JWT authentication**.
@@ -7,7 +7,7 @@ Built with **Spring Boot, MySQL, React, Docker, and JWT authentication**.
 
 ---
 
-## 🚀 Features
+## Features
 
 - **Multi-language Support** – Execute and evaluate submissions in **Python, Java, and C++**.
 
@@ -18,7 +18,7 @@ Built with **Spring Boot, MySQL, React, Docker, and JWT authentication**.
 
 - **Code Evaluation Engine** – Modular execution system with:  
   - Structured test cases  
-  - Secure verdicts (✅ Accepted, ❌ Wrong Answer, ⏳ TLE, 💾 MLE)
+  - Secure verdicts (Accepted, Wrong Answer, TLE, MLE)
 
 - **Admin Panel** – Manage problems with:  
   - Add/Edit problem functionality  
@@ -37,7 +37,7 @@ Built with **Spring Boot, MySQL, React, Docker, and JWT authentication**.
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 **Frontend:** React + Vite  
 **Backend:** Spring Boot  
@@ -48,7 +48,7 @@ Built with **Spring Boot, MySQL, React, Docker, and JWT authentication**.
 
 ---
 
-## 📦 Installation
+## Installation
 
 1. **Clone the repository**
 
@@ -75,7 +75,7 @@ Built with **Spring Boot, MySQL, React, Docker, and JWT authentication**.
   npm install
   npm run dev
 
-## 📷 Screenshots
+## Screenshots
 
 Check out all the screenshots in the [OJ_ScreenShots folder](OJ_ScreenShots/) here.
 
