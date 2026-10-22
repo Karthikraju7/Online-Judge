@@ -16,9 +16,9 @@ public class Problem {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String title; // ✅ New field
+    private String title;
     private String slug;
-    private String difficulty; // ✅ New field: Easy/Medium/Hard
+    private String difficulty;
 
     @Column(columnDefinition = "TEXT")
     private String description;

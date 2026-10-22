@@ -1,8 +1,10 @@
 package com.karthikd.server.service;
 
 import com.karthikd.server.util.CppExecutor;
+import com.karthikd.server.util.FileUtil;
 import com.karthikd.server.util.JavaExecutor;
 import com.karthikd.server.util.PythonExecutor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -15,11 +17,13 @@ import java.util.Map;
 @Service
 public class CodeExecutionService {
 
+    @Autowired
+    private RestTemplate restTemplate;
+
     // RUN
     public Map<String, String> runCode(String language, String code, String input, String identifier) throws Exception {
-
         Object compiled = compile(language, code, identifier);
-        return runCompiled(compiled, language, input);
+        return runCompiled(compiled, language, input, identifier);
     }
 
     // COMPILE
@@ -34,21 +38,21 @@ public class CodeExecutionService {
     }
 
     // RUN MULTIPLE TIMES
-    public Map<String, String> runCompiled(Object compiled, String language, String input) throws Exception {
+    public Map<String, String> runCompiled(Object compiled, String language, String input, String identifier) throws Exception {
 
         String result;
 
         switch (language.toLowerCase()) {
             case "cpp":
-                result = CppExecutor.runCpp((File) compiled, input);
+                result = CppExecutor.runCpp((File) compiled, input, identifier);
                 break;
 
             case "java":
-                result = JavaExecutor.runJava((File) compiled, input);
+                result = JavaExecutor.runJava((File) compiled, input, identifier);
                 break;
 
             case "python":
-                result = PythonExecutor.runPython((String) compiled, input);
+                result = PythonExecutor.runPython((String) compiled, input, identifier);
                 break;
 
             default:
@@ -78,7 +82,6 @@ public class CodeExecutionService {
 
     public String getAiDebugSuggestion(String code, String output, String problemDescription, String language) {
         try {
-            RestTemplate restTemplate = new RestTemplate();
 
             String modelId = "gemini-2.5-flash";
             String generateUrl = "https://generativelanguage.googleapis.com/v1beta/models/"

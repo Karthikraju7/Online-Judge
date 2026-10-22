@@ -1,90 +1,54 @@
 package com.karthikd.server.util;
 
 import java.io.*;
-import java.nio.file.Path;
-import java.util.concurrent.TimeUnit;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class JavaExecutor {
 
-    // COMPILE
     public static File compileJava(String code, String identifier) throws IOException, InterruptedException {
-
-        String className = "Main";
-
-        // Write code
-        Path codeFilePath = FileUtil.writeCodeToFile(code, "java", identifier);
-        File codeDir = codeFilePath.getParent().toFile();
-
-        // Compile
-        Process compileProcess = new ProcessBuilder("javac", className + ".java")
-                .directory(codeDir)
-                .start();
-
-        BufferedReader errorReader = new BufferedReader(new InputStreamReader(compileProcess.getErrorStream()));
-        StringBuilder compileErrors = new StringBuilder();
-        String line;
-
-        while ((line = errorReader.readLine()) != null) {
-            compileErrors.append(line).append("\n");
+        String className = extractClassName(code);
+        if (className == null) {
+            throw new RuntimeException("Could not find public class name in submitted code.");
         }
 
-        int result = compileProcess.waitFor();
+        String safeIdentifier = identifier.replaceAll("[^a-zA-Z0-9]", "_");
+        String hostDir = new File("codes/" + safeIdentifier).getAbsolutePath();
+        new File(hostDir).mkdirs();
 
-        if (result != 0) {
-            throw new RuntimeException("Compilation Error:\n" + compileErrors);
+        File javaFile = new File(hostDir, className + ".java");
+        try (FileWriter writer = new FileWriter(javaFile)) {
+            writer.write(code);
         }
 
-        return codeDir; // return folder containing .class
+        WarmContainerManager.compileJava(safeIdentifier, className + ".java");
+
+        return new File(hostDir);
     }
 
-    //RUN
-    public static String runJava(File codeDir, String input) throws Exception {
+    public static String runJava(File codeDir, String input, String identifier) throws Exception {
+        String safeIdentifier = identifier.replaceAll("[^a-zA-Z0-9]", "_");
+        return WarmContainerManager.runJava(safeIdentifier, findClassName(codeDir), input);
+    }
 
-        String className = "Main";
+    public static List<String> runAllTestCases(File codeDir, List<String> inputs, String identifier) throws Exception {
+        String safeIdentifier = identifier.replaceAll("[^a-zA-Z0-9]", "_");
+        return WarmContainerManager.runJavaBatch(safeIdentifier, findClassName(codeDir), inputs);
+    }
 
-        Runtime runtime = Runtime.getRuntime();
-        runtime.gc();
-
-        long startTime = System.nanoTime();
-        long beforeMemory = (runtime.totalMemory() - runtime.freeMemory()) / 1024;
-
-        // Run program
-        ProcessBuilder pb = new ProcessBuilder("java", "-cp", codeDir.getAbsolutePath(), className);
-        pb.redirectErrorStream(true);
-
-        Process process = pb.start();
-
-        // Sending input directly
-        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(process.getOutputStream()));
-        writer.write(input);
-        writer.flush();
-        writer.close();
-
-        boolean finished = process.waitFor(5, TimeUnit.SECONDS);
-
-        if (!finished) {
-            process.destroyForcibly();
-            return "OUTPUT_START\n❌ Time Limit Exceeded\nOUTPUT_END\nTIME:-1\nMEMORY:-1";
+    private static String findClassName(File codeDir) {
+        File[] classFiles = codeDir.listFiles((dir, name) -> name.endsWith(".class") && !name.contains("$"));
+        if (classFiles == null || classFiles.length == 0) return "Main";
+        for (File f : classFiles) {
+            if (f.getName().equals("Main.class")) return "Main";
         }
+        return classFiles[0].getName().replace(".class", "");
+    }
 
-        // Read output
-        BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-        StringBuilder output = new StringBuilder();
-        String line;
-
-        while ((line = reader.readLine()) != null) {
-            output.append(line).append("\n");
-        }
-
-        long endTime = System.nanoTime();
-        long afterMemory = (runtime.totalMemory() - runtime.freeMemory()) / 1024;
-
-        long timeUsedMs = (endTime - startTime) / 1_000_000;
-        long memoryUsedKB = afterMemory - beforeMemory;
-
-        return String.format(
-                "OUTPUT_START\n%s\nOUTPUT_END\nTIME:%dms\nMEMORY:%dKB",
-                output.toString().trim(), timeUsedMs, memoryUsedKB
-        );
+    private static String extractClassName(String code) {
+        Pattern pattern = Pattern.compile("public\\s+class\\s+(\\w+)");
+        Matcher matcher = pattern.matcher(code);
+        return matcher.find() ? matcher.group(1) : null;
     }
 }

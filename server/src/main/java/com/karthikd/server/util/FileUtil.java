@@ -10,27 +10,17 @@ import java.nio.file.Paths;
 public class FileUtil {
 
     private static final String CODE_DIR = "codes";
-    private static final String INPUT_DIR = "inputs";
 
     static {
         new File(CODE_DIR).mkdirs();
-        new File(INPUT_DIR).mkdirs();
     }
 
     public static Path writeCodeToFile(String code, String extension, String identifier) throws IOException {
-
         String safeIdentifier = identifier.replaceAll("[^a-zA-Z0-9]", "_");
-
         String dirPath = CODE_DIR + "/" + safeIdentifier;
         new File(dirPath).mkdirs();
 
-        String fileName;
-        if ("java".equals(extension)) {
-            fileName = "Main.java"; // Java needs Main.java
-        } else {
-            fileName = safeIdentifier + "." + extension;
-        }
-
+        String fileName = "java".equals(extension) ? "Main.java" : safeIdentifier + "." + extension;
         String filePath = dirPath + "/" + fileName;
 
         try (FileWriter writer = new FileWriter(filePath, false)) {
@@ -40,14 +30,19 @@ public class FileUtil {
         return Paths.get(filePath);
     }
 
-    public static Path writeInputToFile(String input, String identifier) throws IOException {
-
+    // Deletes the entire directory for this identifier (code + compiled files)
+    public static void cleanupDirectory(String identifier) {
         String safeIdentifier = identifier.replaceAll("[^a-zA-Z0-9]", "_");
+        Path dirPath = Paths.get(CODE_DIR, safeIdentifier);
+        deleteRecursively(dirPath.toFile());
+    }
 
-        Path inputPath = Paths.get(INPUT_DIR, "input_" + safeIdentifier + ".txt");
-
-        Files.writeString(inputPath, input);
-
-        return inputPath;
+    private static void deleteRecursively(File file) {
+        if (file.isDirectory()) {
+            for (File child : file.listFiles()) {
+                deleteRecursively(child);
+            }
+        }
+        file.delete();
     }
 }

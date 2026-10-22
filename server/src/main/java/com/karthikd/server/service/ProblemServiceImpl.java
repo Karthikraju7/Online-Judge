@@ -32,9 +32,9 @@ public class ProblemServiceImpl implements ProblemService{
     @Override
     public Problem addProblem(AddProblemRequest request) {
         Problem problem = new Problem();
-        problem.setTitle(request.getTitle()); // ✅ Missing before
+        problem.setTitle(request.getTitle()); // for all this dto->entity mapping we can use "MapStruct"
         problem.setSlug(request.getSlug());
-        problem.setDifficulty(request.getDifficulty()); // ✅ Missing before
+        problem.setDifficulty(request.getDifficulty());
         problem.setDescription(request.getDescription());
         problem.setSampleInput(request.getSampleInput());
         problem.setSampleOutput(request.getSampleOutput());
